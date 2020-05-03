@@ -5,6 +5,8 @@ library(dsOmicsClient)
 library(shinydashboard)
 library(shiny)
 library(shinyalert)
+library(DT)
+library(data.table)
 
 ## ui.R ##
 sidebar <- dashboardSidebar(
@@ -63,10 +65,21 @@ body <- dashboardBody(
                      ),
                      hr(style = "border-color: grey;"),
                      fluidRow(
-                       column(12,
-                              textInput("command", "Limma command"),
-                              actionButton("run_limma", "Run limma")
+                       column(6,
+                              uiOutput("limma_variables_selector"),
+                              uiOutput("limma_labels_selector"),
+                              checkboxInput("limma_sva", "sva?", value = FALSE)
                        )
+                     ),
+                     fluidRow(
+                       column(12,
+                              actionButton("run_limma", "run limma")
+                       )
+                     ),
+                     fluidRow(
+                       column(12,
+                              dataTableOutput("limma_results_table")
+                     )
                      )
             )
     )

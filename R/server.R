@@ -1,14 +1,16 @@
 server <- function(input, output, session) {
-  connection <- reactiveValues(conns = NULL)
-  
+  # source("R/table_renders.R", local = TRUE)
+  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL)
+  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL)
+  limma_results <- reactiveValues(result_table = NULL)
   
   observeEvent(input$connect, {
-    builder <- newDSLoginBuilder()
-    builder$append(server = "study1", url = input$url,
+    connection$builder <- newDSLoginBuilder()
+    connection$builder$append(server = "study1", url = input$url,
                    user = input$user, password = input$password,
                    resource = input$resource, driver = "OpalDriver")
-    logindata <- builder$build()
-    connection$conns <- datashield.login(logins = logindata, assign = TRUE,
+    connection$logindata <- connection$builder$build()
+    connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
                               symbol = "client")
   })
   
@@ -20,6 +22,12 @@ server <- function(input, output, session) {
     logindata <- builder$build()
     connection$conns <- datashield.login(logins = logindata, assign = TRUE,
                                          symbol = "res")
+    
+    datashield.assign.expr(connection$conns, symbol = "methy", 
+                           expr = quote(as.resource.object(res)))
+    
+    lists$limma_variables <- ds.varLabels("methy", datasources = connection$conns)
+    lists$limma_labels <- ds.fvarLabels("methy", datasources = connection$conns)
   })
   
   observeEvent(input$run_shell, {
@@ -29,14 +37,27 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$run_limma, {
-    datashield.assign.expr(connection$conns, symbol = "methy", 
-                           expr = quote(as.resource.object(res)))
+    limma_formula <- as.formula(paste0("~ ", paste0(input$limma_var, collapse = " + ")))
     
-    ans.limma <- ds.limma(model = ~ diagnosis + Sex,
-                          Set = "methy", 
-                          datasources = connection$conns)
-    
-    lapply(ans.limma, head)
+    limma_results$result_table <- ds.limma(model = limma_formula,
+                                           Set = "methy", 
+                                           datasources = connection$conns,
+                                           sva = input$limma_sva,
+                                           annotCols = input$limma_lab)
+
+    datashield.logout(connection$conns)
+  })
+  
+  output$limma_variables_selector <- renderUI({
+    selectInput("limma_var", "limma variables", lists$limma_variables, multiple = TRUE)
+  })
+  
+  output$limma_labels_selector <- renderUI({
+    selectInput("limma_lab", "limma labels", lists$limma_labels, multiple = TRUE)
+  })
+  
+  output$limma_results_table <- renderDT({
+    as.data.table(limma_results$result_table)
   })
 }
 
