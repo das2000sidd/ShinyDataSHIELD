@@ -11,8 +11,8 @@ library(data.table)
 ## ui.R ##
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    menuItem("p link test", tabName = "plink", icon = icon("dashboard")),
-    menuItem("limma test", tabName = "limma", icon = icon("dashboard"))
+    menuItem("PLINK", tabName = "plink", icon = icon("dashboard")),
+    menuItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
   )
 )
 
@@ -87,7 +87,7 @@ body <- dashboardBody(
 )
 # Put them together into a dashboardPage
 dashboardPage(
-  dashboardHeader(title = "rexposome"),
+  dashboardHeader(title = "DataSHIELD"),
   sidebar,
   body
 )
