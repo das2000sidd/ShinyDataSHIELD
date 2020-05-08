@@ -7,6 +7,7 @@ library(shiny)
 library(shinyalert)
 library(DT)
 library(data.table)
+library(shinybusy)
 
 ## ui.R ##
 sidebar <- dashboardSidebar(
