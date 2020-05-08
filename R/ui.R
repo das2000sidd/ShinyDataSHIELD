@@ -17,6 +17,7 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
+  useShinyalert(),
   tabItems(
     tabItem(tabName = "plink",
             tabPanel('p link commands',
@@ -64,18 +65,20 @@ body <- dashboardBody(
                        )
                      ),
                      hr(style = "border-color: grey;"),
+                     
                      fluidRow(
                        column(6,
                               uiOutput("limma_variables_selector"),
                               uiOutput("limma_labels_selector"),
-                              checkboxInput("limma_sva", "sva?", value = FALSE)
+                              uiOutput("limma_sva_selector")
                        )
                      ),
                      fluidRow(
                        column(12,
-                              actionButton("run_limma", "run limma")
+                              uiOutput("limma_run")
                        )
                      ),
+                     
                      fluidRow(
                        column(12,
                               dataTableOutput("limma_results_table")

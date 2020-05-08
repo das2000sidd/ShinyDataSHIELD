@@ -12,22 +12,46 @@ server <- function(input, output, session) {
     connection$logindata <- connection$builder$build()
     connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
                               symbol = "client")
+    
+    
   })
   
   observeEvent(input$connect_limma, {
-    builder <- newDSLoginBuilder()
-    builder$append(server = "study1", url = input$url_l,
-                   user = input$user_l, password = input$password_l,
-                   resource = input$resource_l, driver = "OpalDriver")
-    logindata <- builder$build()
-    connection$conns <- datashield.login(logins = logindata, assign = TRUE,
-                                         symbol = "res")
+    tryCatch({
+      builder <- newDSLoginBuilder()
+      builder$append(server = "study1", url = input$url_l,
+                     user = input$user_l, password = input$password_l,
+                     resource = input$resource_l, driver = "OpalDriver")
+      logindata <- builder$build()
+      connection$conns <- datashield.login(logins = logindata, assign = TRUE,
+                                           symbol = "res")
+      
+      datashield.assign.expr(connection$conns, symbol = "methy", 
+                             expr = quote(as.resource.object(res)))
+      
+      lists$limma_variables <- ds.varLabels("methy", datasources = connection$conns)
+      lists$limma_labels <- ds.fvarLabels("methy", datasources = connection$conns)
+      
+      output$limma_variables_selector <- renderUI({
+        selectInput("limma_var", "Variables for the limma", lists$limma_variables, multiple = TRUE)
+      })
+      
+      output$limma_labels_selector <- renderUI({
+        selectInput("limma_lab", "Labels for the limma", lists$limma_labels, multiple = TRUE)
+      })
+      
+      output$limma_sva_selector <- renderUI({
+        checkboxInput("limma_sva", "SVA", value = FALSE)
+      })
+      
+      output$limma_run <- renderUI({
+        actionButton("run_limma", "Run limma")
+      })
+      
+    }, error = function(w){
+      shinyalert("Oops!", "Not able to connect", type = "error")
+    })
     
-    datashield.assign.expr(connection$conns, symbol = "methy", 
-                           expr = quote(as.resource.object(res)))
-    
-    lists$limma_variables <- ds.varLabels("methy", datasources = connection$conns)
-    lists$limma_labels <- ds.fvarLabels("methy", datasources = connection$conns)
   })
   
   observeEvent(input$run_shell, {
@@ -48,17 +72,10 @@ server <- function(input, output, session) {
     datashield.logout(connection$conns)
   })
   
-  output$limma_variables_selector <- renderUI({
-    selectInput("limma_var", "limma variables", lists$limma_variables, multiple = TRUE)
-  })
-  
-  output$limma_labels_selector <- renderUI({
-    selectInput("limma_lab", "limma labels", lists$limma_labels, multiple = TRUE)
-  })
-  
   output$limma_results_table <- renderDT({
     as.data.table(limma_results$result_table)
   })
+  
 }
 
 
