@@ -7,11 +7,14 @@ library(shiny)
 library(shinyalert)
 library(DT)
 library(data.table)
-library(shinybusy)
+library(shinyjs)
 
 ## ui.R ##
 sidebar <- dashboardSidebar(
   sidebarMenu(
+    id = "tabs",
+    uiOutput("userpanel"),
+    menuItem("Connect to server", tabName = "server_connect", icon = icon("dashboard")),
     menuItem("PLINK", tabName = "plink", icon = icon("dashboard")),
     menuItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
   )
@@ -19,9 +22,10 @@ sidebar <- dashboardSidebar(
 
 body <- dashboardBody(
   useShinyalert(),
+  useShinyjs(),
   tabItems(
-    tabItem(tabName = "plink",
-            tabPanel('p link commands',
+    tabItem(tabName = "server_connect",
+            tabPanel('server_connect',
                      fluidRow(
                        column(6,
                               #textInput("server", "Server"),
@@ -31,14 +35,17 @@ body <- dashboardBody(
                               textInput("user", "User"),
                               passwordInput("password", "Password")
                        )
-                       ),
+                     ),
                      fluidRow(
                        column(6,
                               textInput("resource", "Resource"),
-                              actionButton("connect", "Connect")
+                              actionButton("connect_server", "Connect")
+                       )
                      )
-                     ),
-                     hr(style = "border-color: grey;"),
+            )
+    ),
+    tabItem(tabName = "plink",
+            tabPanel('p link commands',
                      fluidRow(
                        column(12,
                               textInput("command", "Shell command"),
@@ -49,24 +56,6 @@ body <- dashboardBody(
     ),
     tabItem(tabName = "limma",
             tabPanel('limma commands',
-                     fluidRow(
-                       column(6,
-                              #textInput("server", "Server"),
-                              textInput("url_l", "Url")
-                       ),
-                       column(6,
-                              textInput("user_l", "User"),
-                              passwordInput("password_l", "Password")
-                       )
-                     ),
-                     fluidRow(
-                       column(6,
-                              textInput("resource_l", "Resource"),
-                              actionButton("connect_limma", "Connect")
-                       )
-                     ),
-                     hr(style = "border-color: grey;"),
-                     
                      fluidRow(
                        column(6,
                               uiOutput("limma_variables_selector"),
