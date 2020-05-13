@@ -1,24 +1,66 @@
 server <- function(input, output, session) {
   source("table_renders.R", local = TRUE)
-  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE)
-  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL)
+  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE)
+  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   
-  observeEvent(input$connect_server, {
+  observeEvent(input$connect_server,{
     tryCatch({
-      connection$builder <- newDSLoginBuilder()
-      connection$builder$append(server = "opal_server", url = input$url,
-                                user = input$user, password = input$password,
-                                resource = input$resource, driver = "OpalDriver")
-      connection$logindata <- connection$builder$build()
-      connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
-                                           symbol = "client")
-      datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                             expr = quote(as.resource.object(client)))
-      connection$active <- TRUE
+      if((input$project == "" & input$resource == "") & !connection$complete){
+        opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
+        lists$projects <- opal.projects(opal_conection)$name
+        opal.logout(opal_conection)
+        
+        output$project_selector <- renderUI({
+          selectInput("project_selected", "Project", lists$projects)
+        })
+        
+        toggleElement("optional_banner")
+        toggleElement("project")
+        toggleElement("resource")
+      }
+      
+      else{
+        if (!is.null(input$resource_selected)) {
+          resource <- paste0(list(input$project_selected, input$resource_selected), collapse = ".")
+        }
+        else {
+          resource <- paste0(list(input$project, input$resource), collapse = ".")
+        }
+        withProgress(message = "Connecting to server", {
+          connection$builder <- newDSLoginBuilder()
+          connection$builder$append(server = "opal_server", url = input$url,
+                                    user = input$user, password = input$password,
+                                    resource = resource, driver = "OpalDriver")
+          connection$logindata <- connection$builder$build()
+          connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
+                                               symbol = "client")
+          tryCatch({
+            datashield.assign.expr(connection$conns, symbol = "resource_opal", 
+                                   expr = quote(as.resource.object(client)))
+            connection$active <- TRUE
+          }, error = function(w){
+            datashield.logout(connection$conns)
+            shinyalert("Oops!", "Broken resource", type = "error")
+          })
+        })
+      }
     }, error = function(w){
       shinyalert("Oops!", "Not able to connect", type = "error")
     })
+  })
+  
+  observe({
+    if(!is.null(input$project_selected)){
+      opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
+      lists$resources <- opal.resources(opal_conection, input$project_selected)$name
+      opal.logout(opal_conection)
+      
+      output$resource_selector <- renderUI({
+        selectInput("resource_selected", "Resource", lists$resources)
+      })
+      connection$complete <- TRUE
+    }
   })
   
   observeEvent(input$run_shell, {
