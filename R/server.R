@@ -1,6 +1,6 @@
 server <- function(input, output, session) {
   source("table_renders.R", local = TRUE)
-  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE)
+  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, isTable = FALSE)
   lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   
@@ -9,40 +9,72 @@ server <- function(input, output, session) {
       if((input$project == "" & input$resource == "") & !connection$complete){
         connection$opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
         lists$projects <- opal.projects(connection$opal_conection)$name
-        
         output$project_selector <- renderUI({
           selectInput("project_selected", "Project", lists$projects)
         })
-        
         toggleElement("optional_banner")
         toggleElement("project")
         toggleElement("resource")
+        toggleElement("selector_optional_table")
       }
       
       else{
-        if (!is.null(input$resource_selected)) {
-          resource <- paste0(list(input$project_selected, input$resource_selected), collapse = ".")
-        }
-        else {
+        if (is.null(input$resource_selected)) {
           resource <- paste0(list(input$project, input$resource), collapse = ".")
+          if (input$selector_optional_table == "Table") {connection$isTable <- TRUE}
         }
+        
         withProgress(message = "Connecting to server", {
           connection$builder <- newDSLoginBuilder()
-          #### MIRAR EL RESOURCE = O TABLE = !!!
-          connection$builder$append(server = "opal_server", url = input$url,
-                                    user = input$user, password = input$password,
-                                    resource = resource, driver = "OpalDriver")
+          if (connection$isTable) {
+            if(!exists("resource")){
+              iter <- 0
+              for(res in input$resource_selected) {
+                iter <- iter + 1
+                server <- paste0("server", iter)
+                resource <- paste0(list(input$project_selected, res), collapse = ".")
+                connection$builder$append(server = server, url = input$url,
+                                          user = input$user, password = input$password,
+                                          table = resource, driver = "OpalDriver")
+              }
+            }
+            else {
+              connection$builder$append(server = "opal_server", url = input$url,
+                                        user = input$user, password = input$password,
+                                        table = resource, driver = "OpalDriver")
+            }
+          }
+          else {
+            if(!exists("resource")){
+              iter <- 0
+              for(res in input$resource_selected) {
+                iter <- iter + 1
+                server <- paste0("server", iter)
+                resource <- paste0(list(input$project_selected, res), collapse = ".")
+                connection$builder$append(server = "opal_server", url = input$url,
+                                          user = input$user, password = input$password,
+                                          resource = resource, driver = "OpalDriver")
+              }
+            }
+            else {
+              connection$builder$append(server = "opal_server", url = input$url,
+                                        user = input$user, password = input$password,
+                                        resource = resource, driver = "OpalDriver")
+            }
+          }
           connection$logindata <- connection$builder$build()
           connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
                                                symbol = "client")
           tryCatch({
-            tryCatch({
-              datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                     expr = quote(as.resource.object(client)))
-            }, error = function(w){
-              datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                     expr = quote(as.resource.data.frame(client, strict = TRUE)))
-            })
+            if (!connection$isTable) {
+              tryCatch({
+                datashield.assign.expr(connection$conns, symbol = "resource_opal", 
+                                       expr = quote(as.resource.data.frame(client)))
+              }, error = function(w){
+                datashield.assign.expr(connection$conns, symbol = "resource_opal", 
+                                       expr = quote(as.resource.object(client, strict = TRUE)))
+              })
+            }
             connection$active <- TRUE
           }, error = function(w){
             datashield.logout(connection$conns)
@@ -56,19 +88,19 @@ server <- function(input, output, session) {
     })
   })
   
-  observe({
-    if(!is.null(input$project_selected)){
-      lists$resources <- tryCatch({
-        opal.resources(connection$opal_conection, input$project_selected)$name
-      }, error = function(w) {
-        opal.tables(connection$opal_conection, input$project_selected)$name
-      })
-       
-      output$resource_selector <- renderUI({
-        selectInput("resource_selected", "Resource", lists$resources)
-      })
-      connection$complete <- TRUE
+  observeEvent(input$project_selected, {
+    lists$resources <- tryCatch({
+      connection$isTable <- FALSE
+      opal.resources(connection$opal_conection, input$project_selected)$name
+      }, error = function(w){NULL})
+    if (is.null(lists$resources)) {
+      lists$resources <- opal.tables(connection$opal_conection, input$project_selected)$name
+      connection$isTable <- TRUE
     }
+    output$resource_selector <- renderUI({
+      selectInput("resource_selected", "Resource", lists$resources, multiple = TRUE)
+    })
+    connection$complete <- TRUE
   })
   
   observeEvent(input$run_shell, {
@@ -91,12 +123,14 @@ server <- function(input, output, session) {
   })
   
   onclick('connection_display',
-          datashield.logout(connection$conns),
           connection$active <- FALSE
           )
   onclick('connection_display',
           opal.logout(connection$opal_conection)
           )
+  onclick('connection_display',
+          datashield.logout(connection$conns)
+  )
   
   output$userpanel <- renderUI({
     sidebarUserPanel(

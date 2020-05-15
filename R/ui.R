@@ -15,8 +15,11 @@ sidebar <- dashboardSidebar(
     id = "tabs",
     uiOutput("userpanel"),
     menuItem("Connect to server", tabName = "server_connect", icon = icon("dashboard")),
-    menuItem("PLINK", tabName = "plink", icon = icon("dashboard")),
-    menuItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
+    menuItem("Descriptive statistics", tabName = "d_statistics", icon = icon("dashboard")),
+    menuItem("Omics", tabName = "omics", icon = icon("dashboard"),
+             menuSubItem("PLINK", tabName = "plink", icon = icon("dashboard")),
+             menuSubItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
+             )
   )
 )
 
@@ -41,6 +44,7 @@ body <- dashboardBody(
                        column(4,
                               textInput("project", "Project"),
                               textInput("resource", "Resource"),
+                              selectInput("selector_optional_table", "Type", c("Table", "Resource"))
                        )
                      ),
                      hr(),
@@ -59,6 +63,16 @@ body <- dashboardBody(
                               actionButton("connect_server", "Connect")
                        )
                      )
+            )
+    ),
+    tabItem(tabName = "d_statistics",
+            tabPanel("d_statistics",
+                     fluidRow(
+                       column(12,
+                              h1("hola")
+                     )
+                     )
+              
             )
     ),
     tabItem(tabName = "plink",
