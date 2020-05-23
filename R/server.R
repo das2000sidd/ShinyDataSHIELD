@@ -1,8 +1,12 @@
 server <- function(input, output, session) {
   source("table_renders.R", local = TRUE)
-  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, isTable = FALSE)
-  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL)
+  source("plot_renders.R", local = TRUE)
+  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, isTable = FALSE, server_resource = list())
+  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL)
   limma_results <- reactiveValues(result_table = NULL)
+  plink_results <- reactiveValues(result_table = NULL)
+  vcf_results <- reactiveValues(result_table_gwas = NULL)
+  manhattan_gwas <- reactiveValues(data = NULL, featureCol = NULL, chrCol = NULL, posCol = NULL, pvalCol = NULL)
   
   observeEvent(input$connect_server,{
     tryCatch({
@@ -33,13 +37,14 @@ server <- function(input, output, session) {
                 iter <- iter + 1
                 server <- paste0("server", iter)
                 resource <- paste0(list(input$project_selected, res), collapse = ".")
+                connection$server_resource[[server]] <- resource
                 connection$builder$append(server = server, url = input$url,
                                           user = input$user, password = input$password,
                                           table = resource, driver = "OpalDriver")
               }
             }
             else {
-              connection$builder$append(server = "opal_server", url = input$url,
+              connection$builder$append(server = server, url = input$url,
                                         user = input$user, password = input$password,
                                         table = resource, driver = "OpalDriver")
             }
@@ -51,13 +56,14 @@ server <- function(input, output, session) {
                 iter <- iter + 1
                 server <- paste0("server", iter)
                 resource <- paste0(list(input$project_selected, res), collapse = ".")
-                connection$builder$append(server = "opal_server", url = input$url,
+                connection$server_resource[[server]] <- resource
+                connection$builder$append(server = server, url = input$url,
                                           user = input$user, password = input$password,
                                           resource = resource, driver = "OpalDriver")
               }
             }
             else {
-              connection$builder$append(server = "opal_server", url = input$url,
+              connection$builder$append(server = server, url = input$url,
                                         user = input$user, password = input$password,
                                         resource = resource, driver = "OpalDriver")
             }
@@ -66,16 +72,21 @@ server <- function(input, output, session) {
           connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
                                                symbol = "client")
           tryCatch({
-            if (!connection$isTable) {
+            class <- ds.class("client", connection$conns)
+            if (!any(c("SshResourceClient", "data.frame") %in% unlist(class))) {
               tryCatch({
                 datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                       expr = quote(as.resource.data.frame(client)))
+                                       expr = quote(as.resource.object(client)))
               }, error = function(w){
                 datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                       expr = quote(as.resource.object(client, strict = TRUE)))
+                                       expr = quote(as.resource.data.frame(client, strict = TRUE)))
               })
             }
+            else {datashield.assign.expr(connection$conns, symbol = "resource_opal", 
+                                         expr = quote(client))}
+            
             connection$active <- TRUE
+            
           }, error = function(w){
             datashield.logout(connection$conns)
             opal.logout(connection$opal_conection)
@@ -104,9 +115,16 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$run_shell, {
+    withProgress(message = "Connecting to server", {
     plink.arguments <- input$command
-    browser()
-    ans.plink <- ds.PLINK("resource_opal", plink.arguments, datasources = connection$conns)
+    incProgress(0.4)
+    plink_results$result_table <- ds.PLINK("resource_opal", plink.arguments, datasources = connection$conns)
+    showElement("plink_show_plain")
+    })
+  })
+  
+  output$plink_results_terminal_render <- renderText({
+    paste0(plink_results$result_table$server1$plink.out$output, collapse = " \n ")
   })
   
   observeEvent(input$run_limma, {
@@ -120,6 +138,16 @@ server <- function(input, output, session) {
                                              annotCols = input$limma_lab)
       incProgress(0.8)
     })
+    browser()
+    if (length(connection$server_resource) > 1) {
+      output$limma_server_select <- renderUI({
+        # EL RESOURCE SELECCIONAT MANE QUINA TAULA ES FA EL RENDER!!!! AL TABLE RENDERS
+        # limma_results$result_table + INPUT$LIMMA_SERVER_RESULTS AMB UN PASTE0
+        selectInput("limma_server_results", "Resource", unlist(connection$server_resource))
+      })
+    }
+    
+    browser()
   })
   
   onclick('connection_display',
@@ -169,11 +197,15 @@ server <- function(input, output, session) {
   observe({
     if(input$tabs == "limma") {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (!(any(c("ExpressionSet", "RangedSummarizedExperiment") %in% unlist(ds.class("resource_opal", connection$conns))))){
+        shinyalert("Oops!", "Selected resource(s) is not an Expression Set or Range Summarized Experiment. Can't perform LIMMA", type = "error")
+      }
       else {
         withProgress(message = "Loading Limma parameters", value = 0, {
           incProgress(0.2)
-          lists$limma_variables <- ds.varLabels("resource_opal", datasources = connection$conns)
-          lists$limma_labels <- ds.fvarLabels("resource_opal", datasources = connection$conns)
+            # Take variables from the 1st selected dataset. They should be equal
+          lists$limma_variables <- ds.varLabels("resource_opal", datasources = connection$conns)$server1
+          lists$limma_labels <- ds.fvarLabels("resource_opal", datasources = connection$conns)$server1
           incProgress(0.6)
           output$limma_variables_selector <- renderUI({
             selectInput("limma_var", "Variables for the limma", lists$limma_variables, multiple = TRUE)
@@ -191,5 +223,87 @@ server <- function(input, output, session) {
         })
       }
     }
+    if(input$tabs == "plink"){
+      if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (!(any(c("SshResourceClient") %in% unlist(ds.class("resource_opal", connection$conns))))){
+        shinyalert("Oops!", "Selected resource(s) is not a PLINK resource ", type = "error")
+      }
+      else{
+        hideElement("plink_show_plain")
+      }
+    }
+    if(input$tabs == "vcf_files"){
+      if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (!(any(c("GdsGenotypeReader", "GWASTools") %in% unlist(ds.class("resource_opal", connection$conns))))){
+        shinyalert("Oops!", "Selected resource(s) is not an GdsGenotypeReader or GWASTools.", type = "error")
+      }
+      else if (length(connection$server_resource) > 1) {
+        shinyalert("Oops!", "VCF GWAS currently only implemented for 1 resource at a time", type = "error")
+      }
+      else{
+        new_res <- gsub('.{4}$', '', connection$server_resource$server1)
+        tryCatch({
+          datashield.assign.resource(connection$conns, symbol = "covars.vcf", 
+                                     resource = list(server1 = new_res))
+          datashield.assign.expr(connection$conns, symbol = "covars", 
+                                 expr = quote(as.resource.data.frame(covars.vcf)))
+          lists$vcf_covars <- ds.colnames("covars", datasources = connection$conns)
+        }, error = function(w){
+          shinyalert("Oops!", paste0("Could not find covariables resource: ", new_res), type = "error")
+        })
+        
+        output$vcf_ct_selector <- renderUI({
+          selectInput("vcf_ct_var", "Covariable", lists$vcf_covars$server1)
+        })
+        
+        output$vcf_selector_var <- renderUI({
+          selectInput("vcf_var", "Covariable", lists$vcf_covars$server1)
+        })
+        output$vcf_selector_cov <- renderUI({
+          selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
+        })
+      }
+    }
+    if(input$tabs == "gwas_plot"){
+      browser()
+      if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (is.null(vcf_results$result_table_gwas) & is.null(plink_results$result_table)) {
+        shinyalert("Oops!", "No GWAS analysis performed to display", type = "error")
+      }
+      else{
+        if(!is.null(vcf_results$result_table_gwas)){
+          manhattan_gwas$data <- vcf_results$result_table_gwas
+          manhattan_gwas$featureCol <- 2
+          manhattan_gwas$chrCol <- 3
+          manhattan_gwas$posCol <- 4
+          manhattan_gwas$pvalCol <- 11
+        }
+        else{
+          manhattan_gwas$data <- plink_results$result_table
+          manhattan_gwas$featureCol <- 2
+          manhattan_gwas$chrCol <- 1
+          manhattan_gwas$posCol <- 3
+          manhattan_gwas$pvalCol <- 9
+        }
+      }
+    }
+  })
+  
+  observeEvent(input$gwas_trigger, {
+    tryCatch({
+      ds.GenotypeData(x='resource_opal', covars = 'covars', columnId = 1, newobj.name = 'gds.Data', datasources = connection$conns)
+      resources_match <- TRUE
+    }, error = function(w){
+      shinyalert("Oops!", "Different individuals between vcf and covar files", type = "error")
+      resources_match <- FALSE
+    })
+    if(resources_match){
+      model <- paste0(input$vcf_var, "~", if(is.null(input$vcf_cov)){1} else{paste0(input$vcf_cov, collapse = "+")})
+      vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
+    }
+  })
+  
+  observeEvent(input$stop, {
+    browser()
   })
 }
