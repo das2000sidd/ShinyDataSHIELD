@@ -44,7 +44,8 @@ server <- function(input, output, session) {
               }
             }
             else {
-              connection$builder$append(server = server, url = input$url,
+              connection$server_resource[["server1"]] <- resource
+              connection$builder$append(server = "server1", url = input$url,
                                         user = input$user, password = input$password,
                                         table = resource, driver = "OpalDriver")
             }
@@ -63,7 +64,8 @@ server <- function(input, output, session) {
               }
             }
             else {
-              connection$builder$append(server = server, url = input$url,
+              connection$server_resource[["server1"]] <- resource
+              connection$builder$append(server = "server1", url = input$url,
                                         user = input$user, password = input$password,
                                         resource = resource, driver = "OpalDriver")
             }
@@ -115,11 +117,15 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$run_shell, {
-    withProgress(message = "Connecting to server", {
+    withProgress(message = "Runnink PLINK shell command", {
     plink.arguments <- input$command
     incProgress(0.4)
-    plink_results$result_table <- ds.PLINK("resource_opal", plink.arguments, datasources = connection$conns)
-    showElement("plink_show_plain")
+    tryCatch({
+      plink_results$result_table <- ds.PLINK("resource_opal", plink.arguments, datasources = connection$conns)
+      showElement("plink_show_plain")
+    }, error = function(w){
+      shinyalert("Oops!", "PLINK command yielded errors", type = "error")
+    })
     })
   })
   
@@ -138,7 +144,6 @@ server <- function(input, output, session) {
                                              annotCols = input$limma_lab)
       incProgress(0.8)
     })
-    browser()
     if (length(connection$server_resource) > 1) {
       output$limma_server_select <- renderUI({
         # EL RESOURCE SELECCIONAT MANE QUINA TAULA ES FA EL RENDER!!!! AL TABLE RENDERS
@@ -146,8 +151,6 @@ server <- function(input, output, session) {
         selectInput("limma_server_results", "Resource", unlist(connection$server_resource))
       })
     }
-    
-    browser()
   })
   
   onclick('connection_display',
@@ -241,45 +244,46 @@ server <- function(input, output, session) {
         shinyalert("Oops!", "VCF GWAS currently only implemented for 1 resource at a time", type = "error")
       }
       else{
-        new_res <- gsub('.{4}$', '', connection$server_resource$server1)
-        tryCatch({
-          datashield.assign.resource(connection$conns, symbol = "covars.vcf", 
-                                     resource = list(server1 = new_res))
-          datashield.assign.expr(connection$conns, symbol = "covars", 
-                                 expr = quote(as.resource.data.frame(covars.vcf)))
-          lists$vcf_covars <- ds.colnames("covars", datasources = connection$conns)
-        }, error = function(w){
-          shinyalert("Oops!", paste0("Could not find covariables resource: ", new_res), type = "error")
-        })
-        
-        output$vcf_ct_selector <- renderUI({
-          selectInput("vcf_ct_var", "Covariable", lists$vcf_covars$server1)
-        })
-        
-        output$vcf_selector_var <- renderUI({
-          selectInput("vcf_var", "Covariable", lists$vcf_covars$server1)
-        })
-        output$vcf_selector_cov <- renderUI({
-          selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
+        withProgress(message = "Loading variable names", {
+          new_res <- gsub('.{4}$', '', connection$server_resource$server1)
+          tryCatch({
+            datashield.assign.resource(connection$conns, symbol = "covars.vcf", 
+                                       resource = list(server1 = new_res))
+            datashield.assign.expr(connection$conns, symbol = "covars", 
+                                   expr = quote(as.resource.data.frame(covars.vcf)))
+            lists$vcf_covars <- ds.colnames("covars", datasources = connection$conns)
+          }, error = function(w){
+            shinyalert("Oops!", paste0("Could not find covariables resource: ", new_res), type = "error")
+          })
+          incProgress(0.6)
+          output$vcf_ct_selector <- renderUI({
+            selectInput("vcf_ct_var", "Covariable", lists$vcf_covars$server1)
+          })
+          
+          output$vcf_selector_var <- renderUI({
+            selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
+          })
+          output$vcf_selector_cov <- renderUI({
+            selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
+          })
         })
       }
     }
     if(input$tabs == "gwas_plot"){
-      browser()
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
       else if (is.null(vcf_results$result_table_gwas) & is.null(plink_results$result_table)) {
         shinyalert("Oops!", "No GWAS analysis performed to display", type = "error")
       }
       else{
         if(!is.null(vcf_results$result_table_gwas)){
-          manhattan_gwas$data <- vcf_results$result_table_gwas
+          manhattan_gwas$data <- vcf_results$result_table_gwas$server1
           manhattan_gwas$featureCol <- 2
           manhattan_gwas$chrCol <- 3
           manhattan_gwas$posCol <- 4
           manhattan_gwas$pvalCol <- 11
         }
         else{
-          manhattan_gwas$data <- plink_results$result_table
+          manhattan_gwas$data <- plink_results$result_table$server1$results
           manhattan_gwas$featureCol <- 2
           manhattan_gwas$chrCol <- 1
           manhattan_gwas$posCol <- 3
@@ -298,8 +302,10 @@ server <- function(input, output, session) {
       resources_match <- FALSE
     })
     if(resources_match){
-      model <- paste0(input$vcf_var, "~", if(is.null(input$vcf_cov)){1} else{paste0(input$vcf_cov, collapse = "+")})
-      vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
+      withProgress(message = "Performing GWAS", {
+        model <- paste0(input$vcf_var, "~", if(is.null(input$vcf_cov)){1} else{paste0(input$vcf_cov, collapse = "+")})
+        vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
+      })
     }
   })
   

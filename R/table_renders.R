@@ -16,5 +16,5 @@ output$vcf_ct_perc <- renderDT({
 })
 
 output$vcf_results <- renderDT({
-  as.data.table(vcf_results$result_table$server1)
+  as.data.table(vcf_results$result_table_gwas$server1)
 })

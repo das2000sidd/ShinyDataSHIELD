@@ -9,6 +9,8 @@ library(DT)
 library(data.table)
 library(shinyjs)
 library(shinyBS)
+library(ggplot2)
+library(shinycssloaders)
 
 ## ui.R ##
 sidebar <- dashboardSidebar(
@@ -84,6 +86,8 @@ body <- dashboardBody(
                      fluidRow(
                        column(12,
                               textInput("command", "Shell command"),
+                              h5("NOTE: we avoid –out to indicate the output file"),
+                              h5("NOTE: No need to input plink as in a shell command (plink < > can be inputed as < >)"),
                               actionButton("run_shell", "Run Shell command"),
                               actionButton("plink_show_plain", "Show PLINK terminal output"),
                               dataTableOutput("plink_results_table"),
@@ -115,7 +119,7 @@ body <- dashboardBody(
     ),
     tabItem(tabName = "gwas_plot",
             fluidRow(
-              plotOutput("gwas_manhattan")
+              withSpinner(plotOutput("gwas_manhattan"))
             )
     ),
     tabItem(tabName = "limma",
