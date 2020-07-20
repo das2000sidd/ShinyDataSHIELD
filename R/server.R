@@ -1,14 +1,73 @@
 server <- function(input, output, session) {
   source("table_renders.R", local = TRUE)
   source("plot_renders.R", local = TRUE)
-  connection <- reactiveValues(builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, isTable = FALSE, server_resource = list())
+  connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
   lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
   manhattan_gwas <- reactiveValues(data = NULL, featureCol = NULL, chrCol = NULL, posCol = NULL, pvalCol = NULL)
   
-  observeEvent(input$connect_server,{
+  observeEvent(input$connect_server, {
+    tryCatch({
+      connection$opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
+      lists$projects <- opal.projects(connection$opal_conection)$name
+      output$project_selector <- renderUI({
+        selectInput("project_selected", "Project", lists$projects)
+      })
+      toggleElement("add_server")
+      toggleElement("remove_server")
+      toggleElement("connect_server")
+      toggleElement("connect_selected")
+      connection$complete <- TRUE
+    },
+    error = function(w){
+      shinyalert("Oops!", "Not able to connect", type = "error")
+    })
+  })
+  
+  observeEvent(input$add_server, {
+    connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("server", connection$num_servers + 1), project = input$project_selected, resources = paste(input$resource_selected, collapse = ", "), table = connection$isTable))
+    connection$num_servers <- connection$num_servers + 1
+  })
+  
+  observeEvent(input$remove_server, {
+    connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
+    connection$num_servers <- nrow(connection$server_resources)
+    connection$server_resources$server <- paste0("server", seq(1:connection$num_servers))
+  })
+  
+  observeEvent(input$connect_selected, {
+    tryCatch({
+      connection$builder <- newDSLoginBuilder()
+      for(server_iter in connection$server_resources$server) {
+        resource_iter <- paste0(connection$server_resources[server_iter == server, project], ".", 
+                                strsplit(connection$server_resources[server_iter == server, resources], split = ", ")[[1]])
+        if(connection$server_resources[server_iter == server, table] == TRUE) {
+          connection$builder$append(server = server_iter, url = input$url,
+                                    user = input$user, password = input$password,
+                                    table = resource_iter, driver = "OpalDriver")
+        }
+        else{
+          connection$builder$append(server = server_iter, url = input$url,
+                                    user = input$user, password = input$password,
+                                    resource = resource_iter, driver = "OpalDriver")
+        }
+      }
+      
+      connection$logindata <- connection$builder$build()
+      connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
+                                           symbol = "client")
+      
+      connection$active <- TRUE
+    }, error = function(w){
+      datashield.logout(connection$conns)
+      opal.logout(connection$opal_conection)
+      shinyalert("Oops!", "Broken resource", type = "error")
+    })
+  })
+  
+  observeEvent(input$connect_server1,{
     tryCatch({
       if((input$project == "" & input$resource == "") & !connection$complete){
         connection$opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)

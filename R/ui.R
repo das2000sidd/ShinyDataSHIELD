@@ -20,8 +20,8 @@ sidebar <- dashboardSidebar(
     menuItem("Connect to server", tabName = "server_connect", icon = icon("dashboard")),
     menuItem("Descriptive statistics", tabName = "d_statistics", icon = icon("dashboard")),
     menuItem("Genomics", tabName = "genomics", icon = icon("dashboard"),
-             menuSubItem("VCF files", tabName = "vcf_files",icon = icon("dashboard")),
-             menuSubItem("Plink files", tabName = "plink",icon = icon("dashboard")),
+             menuSubItem("Analysis with BioConductor", tabName = "vcf_files",icon = icon("dashboard")),
+             menuSubItem("Analysis with PLINK", tabName = "plink",icon = icon("dashboard")),
              menuSubItem("GWAS plot", tabName = "gwas_plot",icon = icon("dashboard"))),
     menuItem("Omics", tabName = "omics", icon = icon("dashboard"),
              menuSubItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
@@ -36,37 +36,33 @@ body <- dashboardBody(
     tabItem(tabName = "server_connect",
             tabPanel('server_connect',
                      fluidRow(
-                       column(4,
+                       column(6,
                               #textInput("server", "Server"),
                               h3("URL"),
-                              textInput("url", "Url")
+                              textInput("url", "Opal server")
                        ),
-                       column(4,
+                       column(6,
                               h3("Credentials"),
                               textInput("user", "User"),
                               passwordInput("password", "Password")
-                       ),
-                       h3(id = "optional_banner", "Optional"),
-                       column(4,
-                              textInput("project", "Project"),
-                              textInput("resource", "Resource"),
-                              selectInput("selector_optional_table", "Type", c("Table", "Resource"))
                        )
                      ),
                      hr(),
                      fluidRow(
                        column(6,
                               uiOutput("project_selector"),
-                              uiOutput("project_selector_button"),
                        ),
                        column(6,
                               uiOutput("resource_selector"),
-                              uiOutput("resource_selector_button")
                        )
                      ),
+                     hidden(actionButton("add_server", "Add server")),
+                     hidden(actionButton("remove_server", "Remove selected server(s)")),
+                     dataTableOutput("server_resources_table"),
                      fluidRow(
                        column(6,
-                              actionButton("connect_server", "Connect")
+                              actionButton("connect_server", "Connect"),
+                              hidden(actionButton("connect_selected", "Connect"))
                        )
                      )
             )
@@ -75,7 +71,8 @@ body <- dashboardBody(
             tabPanel("d_statistics",
                      fluidRow(
                        column(12,
-                              h1("hola")
+                              h1("hola"),
+                              actionButton("stop", "stop")
                      )
                      )
               
@@ -85,9 +82,13 @@ body <- dashboardBody(
             tabPanel('p link commands',
                      fluidRow(
                        column(12,
-                              textInput("command", "Shell command"),
+                              textInput("command", "PLINK Shell command", width = "100%"),
                               h5("NOTE: we avoid –out to indicate the output file"),
-                              h5("NOTE: No need to input plink as in a shell command (plink < > can be inputed as < >)"),
+                              h5("NOTE: No need to input plink as in a shell command"),
+                              code("plink < >"),
+                              h5("can be inputed as"),
+                              code("< >"),
+                              h5(""),
                               actionButton("run_shell", "Run Shell command"),
                               actionButton("plink_show_plain", "Show PLINK terminal output"),
                               dataTableOutput("plink_results_table"),
@@ -105,7 +106,7 @@ body <- dashboardBody(
                   uiOutput("vcf_ct_selector"),
                   h3("Counts"),
                   dataTableOutput("vcf_ct_counts"),
-                  h3("Percentages"),
+                  h3(id = "vcf_perc", "Percentages"),
                   dataTableOutput("vcf_ct_perc")
                 ),
                 tabPanel("GWAS",
