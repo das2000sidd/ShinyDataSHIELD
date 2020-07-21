@@ -1,3 +1,21 @@
+output$descriptive_summary <- renderDT(
+  tryCatch({
+    if(ds.class(paste0(input$d_statistics_table_selector_value, "$", input$d_statistics_variable_selector_value),
+                datasources = connection$conns) == "factor") {
+      taula = ds.table1D(paste0(input$d_statistics_table_selector_value, "$", 
+                                input$d_statistics_variable_selector_value), 
+                         datasources = connection$conns)$counts
+      data.table(Values = rownames(taula), Count = taula)
+    }
+    else {
+      Quantiles <- ds.summary(paste0(input$d_statistics_table_selector_value, "$", 
+                                     input$d_statistics_variable_selector_value), 
+                              datasources = connection$conns)$server1$`quantiles & mean`
+      data.table(Quantiles = names(Quantiles), Value = Quantiles)
+    }
+  }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+)
+
 output$server_resources_table <- renderDT(
   connection$server_resources, options=list(columnDefs = list(list(visible=FALSE, targets=c(0, 1, 4))))
 )

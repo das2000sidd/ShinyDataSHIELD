@@ -75,7 +75,7 @@ body <- dashboardBody(
                               uiOutput("d_statistics_server_selector"),
                               uiOutput("d_statistics_variable_selector"),
                               actionButton("trigger_d_statistics", "lesgo"),
-                              actionButton("stop", "stop")
+                              dataTableOutput("descriptive_summary")
                      ),
                      tabPanel("hola2",
                               actionButton("stop", "stop")
