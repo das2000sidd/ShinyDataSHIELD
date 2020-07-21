@@ -77,8 +77,13 @@ body <- dashboardBody(
                               actionButton("trigger_d_statistics", "lesgo"),
                               dataTableOutput("descriptive_summary")
                      ),
-                     tabPanel("hola2",
-                              actionButton("stop", "stop")
+                     tabPanel("Scatter plot",
+                              uiOutput("d_statistics_table_selector_scatter"),
+                              uiOutput("d_statistics_variable_selector_scatter"),
+                              uiOutput("d_statistics_variable_selector_scatter2"),
+                              actionButton("trigger_d_statistics_scatter", "lesgo"),
+                              actionButton("d_statistics_scatter_plot_trigger", "lesgoplot"),
+                              uiOutput("d_statistics_scatter_plot_ui")
                      )
               )
             )

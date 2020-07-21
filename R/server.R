@@ -177,9 +177,25 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$trigger_d_statistics ,{
-    lists$table_columns <- ds.colnames(input$d_statistics_table_selector_value, datasources = connection$conns)
+    table_columns <- ds.colnames(input$d_statistics_table_selector_value, datasources = connection$conns)
     output$d_statistics_variable_selector <- renderUI({
-      selectInput("d_statistics_variable_selector_value", "Select variable", lists$table_columns)
+      selectInput("d_statistics_variable_selector_value", "Select variable", table_columns)
+    })
+  })
+  
+  observeEvent(input$trigger_d_statistics_scatter ,{
+    table_columns <- ds.colnames(input$d_statistics_table_selector_scatter_value, datasources = connection$conns)
+    output$d_statistics_variable_selector_scatter <- renderUI({
+      selectInput("d_statistics_variable_selector_scatter_value", "Select variable", table_columns)
+    })
+    output$d_statistics_variable_selector_scatter2 <- renderUI({
+      selectInput("d_statistics_variable_selector_scatter_value2", "Select variable", table_columns)
+    })
+  })
+  
+  observeEvent(input$d_statistics_scatter_plot_trigger , {
+    output$d_statistics_scatter_plot_ui <- renderUI({
+      plotOutput("d_statistics_scatter_plot")
     })
   })
   
@@ -191,11 +207,15 @@ server <- function(input, output, session) {
       }
       else {
         output$d_statistics_table_selector <- renderUI({
-          selectInput("d_statistics_table_selector_value", "Select table", lists$available_tables, selected = lists$available_tables[1])
+          selectInput("d_statistics_table_selector_value", "Select table", lists$available_tables)
         })
         output$d_statistics_server_selector <- renderUI({
-          selectInput("d_statistics_server_selector_value", "Select study", unlist(connection$server_resources$server), selected = unlist(connection$server_resources$server)[1])
+          selectInput("d_statistics_server_selector_value", "Select study", unlist(connection$server_resources$server))
         })
+        output$d_statistics_table_selector_scatter <- renderUI({
+          selectInput("d_statistics_table_selector_scatter_value", "Select table", lists$available_tables)
+        })
+        
 
         # lists$table_columns <- ds.colnames(input$d_statistics_table_selector_value, datasources = connection$conns)
         
