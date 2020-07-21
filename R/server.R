@@ -2,7 +2,7 @@ server <- function(input, output, session) {
   source("table_renders.R", local = TRUE)
   source("plot_renders.R", local = TRUE)
   connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
-  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL)
+  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
@@ -38,125 +38,45 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$connect_selected, {
+    ## IMPLEMENT CONSISTENCY CHECK IF MULTIPLE STUDIES, IF TABLES , ALL STUDIES MUST HAVE SAME COLUMNS!
     tryCatch({
+      # Create all the study servers
       connection$builder <- newDSLoginBuilder()
       for(server_iter in connection$server_resources$server) {
-        resource_iter <- paste0(connection$server_resources[server_iter == server, project], ".", 
-                                strsplit(connection$server_resources[server_iter == server, resources], split = ", ")[[1]])
-        if(connection$server_resources[server_iter == server, table] == TRUE) {
-          connection$builder$append(server = server_iter, url = input$url,
-                                    user = input$user, password = input$password,
-                                    table = resource_iter, driver = "OpalDriver")
-        }
-        else{
-          connection$builder$append(server = server_iter, url = input$url,
-                                    user = input$user, password = input$password,
-                                    resource = resource_iter, driver = "OpalDriver")
-        }
+        connection$builder$append(server = server_iter, url = input$url,
+                                  user = input$user, password = input$password,
+                                  driver = "OpalDriver")
       }
       
+      # Login into the servers
       connection$logindata <- connection$builder$build()
-      connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
-                                           symbol = "client")
-      
+      connection$conns <- datashield.login(logins = connection$logindata)
+
+      # Load resources and tables
+      resources <- data.table(matrix(unlist(strsplit(connection$server_resources$resources, split = ", ")), nrow = nrow(connection$server_resources), byrow = TRUE))
+      if(connection$server_resources$table == TRUE) {
+        connection$isTable <- TRUE
+        for(i in 1:ncol(resources)) {
+          aux <- as.character(unlist(resources[, i, with = FALSE]))
+          table_info <- connection$server_resources[, table := connection$server_resources[, paste(project, aux, sep = ".")]]
+          datashield.assign.table(connection$conns, paste0("table", i), table_info)
+          lists$available_tables <- c(lists$available_tables, paste0("table", i))
+        }
+      }
+      else {
+        connection$isTable <- FALSE
+        for(i in 1:ncol(resources)) {
+          aux <- as.character(unlist(resources[, i, with = FALSE]))
+          resource_info <- connection$server_resources[, resource := connection$server_resources[, paste(project, aux, sep = ".")]]
+          datashield.assign.resource(connection$conns, paste0("resource", i), resource_info)
+          lists$available_resources <- c(lists$available_resources, paste0("resource", i))
+        }
+      }
       connection$active <- TRUE
     }, error = function(w){
       datashield.logout(connection$conns)
       opal.logout(connection$opal_conection)
       shinyalert("Oops!", "Broken resource", type = "error")
-    })
-  })
-  
-  observeEvent(input$connect_server1,{
-    tryCatch({
-      if((input$project == "" & input$resource == "") & !connection$complete){
-        connection$opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
-        lists$projects <- opal.projects(connection$opal_conection)$name
-        output$project_selector <- renderUI({
-          selectInput("project_selected", "Project", lists$projects)
-        })
-        toggleElement("optional_banner")
-        toggleElement("project")
-        toggleElement("resource")
-        toggleElement("selector_optional_table")
-      }
-      
-      else{
-        if (is.null(input$resource_selected)) {
-          resource <- paste0(list(input$project, input$resource), collapse = ".")
-          if (input$selector_optional_table == "Table") {connection$isTable <- TRUE}
-        }
-        
-        withProgress(message = "Connecting to server", {
-          connection$builder <- newDSLoginBuilder()
-          if (connection$isTable) {
-            if(!exists("resource")){
-              iter <- 0
-              for(res in input$resource_selected) {
-                iter <- iter + 1
-                server <- paste0("server", iter)
-                resource <- paste0(list(input$project_selected, res), collapse = ".")
-                connection$server_resource[[server]] <- resource
-                connection$builder$append(server = server, url = input$url,
-                                          user = input$user, password = input$password,
-                                          table = resource, driver = "OpalDriver")
-              }
-            }
-            else {
-              connection$server_resource[["server1"]] <- resource
-              connection$builder$append(server = "server1", url = input$url,
-                                        user = input$user, password = input$password,
-                                        table = resource, driver = "OpalDriver")
-            }
-          }
-          else {
-            if(!exists("resource")){
-              iter <- 0
-              for(res in input$resource_selected) {
-                iter <- iter + 1
-                server <- paste0("server", iter)
-                resource <- paste0(list(input$project_selected, res), collapse = ".")
-                connection$server_resource[[server]] <- resource
-                connection$builder$append(server = server, url = input$url,
-                                          user = input$user, password = input$password,
-                                          resource = resource, driver = "OpalDriver")
-              }
-            }
-            else {
-              connection$server_resource[["server1"]] <- resource
-              connection$builder$append(server = "server1", url = input$url,
-                                        user = input$user, password = input$password,
-                                        resource = resource, driver = "OpalDriver")
-            }
-          }
-          connection$logindata <- connection$builder$build()
-          connection$conns <- datashield.login(logins = connection$logindata, assign = TRUE,
-                                               symbol = "client")
-          tryCatch({
-            class <- ds.class("client", connection$conns)
-            if (!any(c("SshResourceClient", "data.frame") %in% unlist(class))) {
-              tryCatch({
-                datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                       expr = quote(as.resource.object(client)))
-              }, error = function(w){
-                datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                       expr = quote(as.resource.data.frame(client, strict = TRUE)))
-              })
-            }
-            else {datashield.assign.expr(connection$conns, symbol = "resource_opal", 
-                                         expr = quote(client))}
-            
-            connection$active <- TRUE
-            
-          }, error = function(w){
-            datashield.logout(connection$conns)
-            opal.logout(connection$opal_conection)
-            shinyalert("Oops!", "Broken resource", type = "error")
-          })
-        })
-      }
-    }, error = function(w){
-      shinyalert("Oops!", "Not able to connect", type = "error")
     })
   })
   
@@ -256,7 +176,32 @@ server <- function(input, output, session) {
     ) 
   })
   
+  observeEvent(input$trigger_d_statistics ,{
+    lists$table_columns <- ds.colnames(input$d_statistics_table_selector_value, datasources = connection$conns)
+    output$d_statistics_variable_selector <- renderUI({
+      selectInput("d_statistics_variable_selector_value", "Select variable", lists$table_columns)
+    })
+  })
+  
   observe({
+    if(input$tabs == "d_statistics") {
+      if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (connection$isTable == FALSE) {
+        shinyalert("Oops!", "Descriptive analysis only available for tables", type = "error")
+      }
+      else {
+        output$d_statistics_table_selector <- renderUI({
+          selectInput("d_statistics_table_selector_value", "Select table", lists$available_tables, selected = lists$available_tables[1])
+        })
+        output$d_statistics_server_selector <- renderUI({
+          selectInput("d_statistics_server_selector_value", "Select study", unlist(connection$server_resources$server), selected = unlist(connection$server_resources$server)[1])
+        })
+
+        # lists$table_columns <- ds.colnames(input$d_statistics_table_selector_value, datasources = connection$conns)
+        
+        
+      }
+    }
     if(input$tabs == "limma") {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
       else if (!(any(c("ExpressionSet", "RangedSummarizedExperiment") %in% unlist(ds.class("resource_opal", connection$conns))))){

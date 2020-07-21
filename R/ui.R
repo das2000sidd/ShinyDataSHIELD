@@ -56,8 +56,8 @@ body <- dashboardBody(
                               uiOutput("resource_selector"),
                        )
                      ),
-                     hidden(actionButton("add_server", "Add server")),
-                     hidden(actionButton("remove_server", "Remove selected server(s)")),
+                     hidden(actionButton("add_server", "Add study")),
+                     hidden(actionButton("remove_server", "Remove selected study")),
                      dataTableOutput("server_resources_table"),
                      fluidRow(
                        column(6,
@@ -68,14 +68,19 @@ body <- dashboardBody(
             )
     ),
     tabItem(tabName = "d_statistics",
-            tabPanel("d_statistics",
-                     fluidRow(
-                       column(12,
-                              h1("hola"),
+            fluidRow(
+              tabBox(width = 12,
+                     tabPanel("Summary",
+                              uiOutput("d_statistics_table_selector"),
+                              uiOutput("d_statistics_server_selector"),
+                              uiOutput("d_statistics_variable_selector"),
+                              actionButton("trigger_d_statistics", "lesgo"),
+                              actionButton("stop", "stop")
+                     ),
+                     tabPanel("hola2",
                               actionButton("stop", "stop")
                      )
-                     )
-              
+              )
             )
     ),
     tabItem(tabName = "plink",
