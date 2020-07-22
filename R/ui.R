@@ -78,12 +78,33 @@ body <- dashboardBody(
                               dataTableOutput("descriptive_summary")
                      ),
                      tabPanel("Scatter plot",
-                              uiOutput("d_statistics_table_selector_scatter"),
+                              # uiOutput("d_statistics_table_selector_scatter"),
                               uiOutput("d_statistics_variable_selector_scatter"),
                               uiOutput("d_statistics_variable_selector_scatter2"),
-                              actionButton("trigger_d_statistics_scatter", "lesgo"),
-                              actionButton("d_statistics_scatter_plot_trigger", "lesgoplot"),
+                              selectInput("d_statistics_scatter_type", "loool", c("combine", "split")),
+                              # actionButton("trigger_d_statistics_scatter", "lesgo"),
+                              # actionButton("d_statistics_scatter_plot_trigger", "lesgoplot"),
                               uiOutput("d_statistics_scatter_plot_ui")
+                     ),
+                     tabPanel("Histogram",
+                              uiOutput("d_statistics_variable_selector_histogram"),
+                              selectInput("d_statistics_histogram_type", "loool", c("combine", "split")),
+                              uiOutput("d_statistics_histogram_plot_ui")
+                     ),
+                     tabPanel("Heatmap",
+                              uiOutput("d_statistics_variable_selector_heatmap"),
+                              uiOutput("d_statistics_variable_selector_heatmap2"),
+                              selectInput("d_statistics_heatmap_type", "loool", c("combine", "split")),
+                              uiOutput("d_statistics_heatmap_plot_ui")
+                     )
+              )
+            )
+    ),
+    tabItem(tabName = "statistic_models",
+            fluidRow(
+              tabBox(width = 12,
+                     tabPanel("linear regression",
+                              
                      )
               )
             )
