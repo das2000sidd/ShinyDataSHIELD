@@ -20,6 +20,7 @@ sidebar <- dashboardSidebar(
     menuItem("Connect to server", tabName = "server_connect", icon = icon("dashboard")),
     menuItem("Descriptive statistics", tabName = "d_statistics", icon = icon("dashboard")),
     menuItem("Statistic models", tabName = "statistic_models", icon = icon("dashboard")),
+    menuItem("Mixed statistic models", tabName = "statistic_models_mixed", icon = icon("dashboard")),
     menuItem("Genomics", tabName = "genomics", icon = icon("dashboard"),
              menuSubItem("Analysis with BioConductor", tabName = "vcf_files",icon = icon("dashboard")),
              menuSubItem("Analysis with PLINK", tabName = "plink",icon = icon("dashboard")),
@@ -114,6 +115,22 @@ body <- dashboardBody(
                      dataTableOutput("available_variables_type"),
                      actionButton("perform_glm", "Perform GLM"),
                      dataTableOutput("glm_results_table")
+            )
+    ),
+    tabItem(tabName = "statistic_models_mixed",
+            tabPanel('statistic_models_mixed',
+                     fluidRow(
+                       column(6,
+                              textInput("glmer_formula", "Input GLMer formula:")
+                       ),
+                       column(6,
+                              selectInput("gmler_output_family", "Output family:", c("poisson", "binomial"))
+                       )
+                     ),
+                     dataTableOutput("available_variables_type2"),
+                     actionButton("perform_glmer", "Perform GLMer"),
+                     actionButton("stop", "stop"),
+                     dataTableOutput("glmer_results_table")
             )
     ),
     tabItem(tabName = "plink",

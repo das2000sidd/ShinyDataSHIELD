@@ -30,8 +30,25 @@ output$available_variables_type <- renderDT(
                                           paging = FALSE, searching = FALSE)
 )
 
+output$available_variables_type2 <- renderDT(
+  lists$table_columns_types, options=list(columnDefs = list(list(visible=FALSE, targets=c(0))),
+                                          paging = FALSE, searching = FALSE)
+)
+
 output$glm_results_table <- renderDT(
   glm_results$glm_result_table$coefficients, options=list(paging = FALSE, searching = FALSE,
+                                                          rowCallback = JS(
+                                                            "function(row, data) {",
+                                                            "for (i = 1; i < data.length; i++) {",
+                                                            "if (data[i]>1 | data[i]<1){",
+                                                            "$('td:eq('+i+')', row).html(data[i].toExponential(1));",
+                                                            "}",
+                                                            "}",
+                                                            "}"))
+)
+
+output$glmer_results_table <- renderDT(
+  glm_results$glmer_result_table$SLMA.pooled.ests.matrix, options=list(paging = FALSE, searching = FALSE,
                                                           rowCallback = JS(
                                                             "function(row, data) {",
                                                             "for (i = 1; i < data.length; i++) {",

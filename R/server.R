@@ -3,7 +3,7 @@ server <- function(input, output, session) {
   source("plot_renders.R", local = TRUE)
   connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
   lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
-  glm_results <- reactiveValues(glm_result_table = NULL, glmerslma_result_able = NULL)
+  glm_results <- reactiveValues(glm_result_table = NULL, glmer_result_table = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
@@ -245,6 +245,11 @@ server <- function(input, output, session) {
   observeEvent(input$perform_glm, {
     glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "table1", family = input$gml_output_family,
            datasources = connection$conns)
+  })
+  
+  observeEvent(input$perform_glmer, {
+    glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "table1", family = input$gmler_output_family,
+                                           datasources = connection$conns)
   })
   
   observe({
