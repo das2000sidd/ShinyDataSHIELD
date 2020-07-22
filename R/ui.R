@@ -19,6 +19,7 @@ sidebar <- dashboardSidebar(
     uiOutput("userpanel"),
     menuItem("Connect to server", tabName = "server_connect", icon = icon("dashboard")),
     menuItem("Descriptive statistics", tabName = "d_statistics", icon = icon("dashboard")),
+    menuItem("Statistic models", tabName = "statistic_models", icon = icon("dashboard")),
     menuItem("Genomics", tabName = "genomics", icon = icon("dashboard"),
              menuSubItem("Analysis with BioConductor", tabName = "vcf_files",icon = icon("dashboard")),
              menuSubItem("Analysis with PLINK", tabName = "plink",icon = icon("dashboard")),
@@ -101,12 +102,18 @@ body <- dashboardBody(
             )
     ),
     tabItem(tabName = "statistic_models",
-            fluidRow(
-              tabBox(width = 12,
-                     tabPanel("linear regression",
-                              
-                     )
-              )
+            tabPanel('statistic_models',
+                     fluidRow(
+                       column(6,
+                              textInput("glm_formula", "Input GLM formula:")
+                       ),
+                       column(6,
+                              selectInput("gml_output_family", "Output family:", c("gaussian", "poisson", "binomial"))
+                       )
+                     ),
+                     dataTableOutput("available_variables_type"),
+                     actionButton("perform_glm", "Perform GLM"),
+                     dataTableOutput("glm_results_table")
             )
     ),
     tabItem(tabName = "plink",

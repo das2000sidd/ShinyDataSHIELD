@@ -21,7 +21,25 @@ output$descriptive_summary <- renderDT(
 )
 
 output$server_resources_table <- renderDT(
-  connection$server_resources, options=list(columnDefs = list(list(visible=FALSE, targets=c(0, 1, 4))))
+  connection$server_resources, options=list(columnDefs = list(list(visible=FALSE, targets=c(0, 1, 4))),
+                                            paging = FALSE, searching = FALSE)
+)
+
+output$available_variables_type <- renderDT(
+  lists$table_columns_types, options=list(columnDefs = list(list(visible=FALSE, targets=c(0))),
+                                          paging = FALSE, searching = FALSE)
+)
+
+output$glm_results_table <- renderDT(
+  glm_results$glm_result_table$coefficients, options=list(paging = FALSE, searching = FALSE,
+                                                          rowCallback = JS(
+                                                            "function(row, data) {",
+                                                            "for (i = 1; i < data.length; i++) {",
+                                                            "if (data[i]>1 | data[i]<1){",
+                                                            "$('td:eq('+i+')', row).html(data[i].toExponential(1));",
+                                                            "}",
+                                                            "}",
+                                                            "}"))
 )
 
 output$limma_results_table <- renderDT({
