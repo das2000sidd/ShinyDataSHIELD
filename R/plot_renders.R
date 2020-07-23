@@ -25,7 +25,25 @@ output$d_statistics_heatmap_plot <- renderPlot({
   }, error = function(w){})
 })
 
-output$gwas_manhattan <- renderPlot(
-  manhattan(manhattan_gwas$data, featureCol = manhattan_gwas$featureCol, chrCol = manhattan_gwas$chrCol,
-            posCol = manhattan_gwas$posCol, pvalCol = manhattan_gwas$pvalCol)
-)
+output$manhattan <- renderPlot({
+  data <- vcf_results$result_table_gwas$server1
+  featureCol <- 2
+  chrCol <- 3
+  posCol <- 4
+  pvalCol <- 11
+
+  manhattan(data, featureCol = featureCol, chrCol = chrCol,
+            posCol = posCol, pvalCol = pvalCol)
+})
+
+output$manhattan2 <- renderPlot({
+  data <- plink_results$result_table$server1$results
+  featureCol <- 2
+  chrCol <- 1
+  posCol <- 3
+  pvalCol <- 9
+  
+  manhattan(data, featureCol = featureCol, chrCol = chrCol,
+            posCol = posCol, pvalCol = pvalCol)
+})
+

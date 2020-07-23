@@ -60,7 +60,7 @@ output$glmer_results_table <- renderDT(
 )
 
 output$limma_results_table <- renderDT({
-  as.data.table(limma_results$result_table)
+  as.data.table(limma_results$result_table$server1)
 })
 
 output$plink_results_table <- renderDT({
@@ -89,6 +89,6 @@ output$vcf_ct_perc <- renderDT({
   tryCatch({ds.table1D(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$percentages}, error = function(w){})
 })
 
-output$vcf_results <- renderDT({
+output$vcf_results <- renderDT(
   as.data.table(vcf_results$result_table_gwas$server1)
-})
+)

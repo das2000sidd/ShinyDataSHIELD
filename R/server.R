@@ -7,7 +7,7 @@ server <- function(input, output, session) {
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
-  manhattan_gwas <- reactiveValues(data = NULL, featureCol = NULL, chrCol = NULL, posCol = NULL, pvalCol = NULL)
+  # manhattan_gwas <- reactiveValues(data = NULL, featureCol = NULL, chrCol = NULL, posCol = NULL, pvalCol = NULL)
   
   observeEvent(input$connect_server, {
     tryCatch({
@@ -78,13 +78,19 @@ server <- function(input, output, session) {
           lists$available_tables <- rbind(lists$available_tables, 
                                           cbind(subset(resource_info, select = c("server", "resource")), 
                                                 resource_internal = paste0("resource", i)), fill = TRUE)
+          resource_type <- unlist(ds.class(paste0("resource", i), 
+                                           datasources = connection$conns))
           # c("TidyFileResourceClient", "SQLResourceClient") correspond to resources that have to be coerded to data.frame
-          if (any(c("TidyFileResourceClient", "SQLResourceClient") %in% unlist(ds.class(paste0("resource", i), 
-                                                                                        datasources = connection$conns)))){
+          if (any(c("TidyFileResourceClient", "SQLResourceClient") %in% resource_type)){
             expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
                        expr = quote(as.resource.data.frame(", paste0("resource", i), ")), conns = connection$conns)")
             eval(str2expression(expression))
             lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "table"]
+          }
+          # "SshResourceClient" correspond to ssh resources, don't need to coerce them
+          else if ("SshResourceClient" %in% resource_type){
+            break
+            lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "ssh"]
           }
           # Otherwise coerce to R object
           else {
@@ -137,7 +143,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$run_limma, {
     withProgress(message = "Performing limma model", {
-      browser()
       limma_formula <- as.formula(paste0("~ ", paste0(input$limma_var, collapse = " + ")))
       incProgress(0.4)
       limma_results$result_table <- ds.limma(model = limma_formula,
@@ -288,7 +293,10 @@ server <- function(input, output, session) {
           incProgress(0.2)
             # Take variables from the 1st selected dataset. They should be equal
           lists$limma_variables <- ds.varLabels("resource1", datasources = connection$conns)$server1
-          lists$limma_labels <- ds.fvarLabels("resource1", datasources = connection$conns)$server1
+          
+          ## ds.fvarLabels is crashing for RSE datasets (works for eSets tho)
+          
+          # lists$limma_labels <- ds.fvarLabels("resource1", datasources = connection$conns)$server1
           incProgress(0.6)
           output$limma_variables_selector <- renderUI({
             selectInput("limma_var", "Variables for the limma", lists$limma_variables, multiple = TRUE)
@@ -342,22 +350,22 @@ server <- function(input, output, session) {
       else if (is.null(vcf_results$result_table_gwas) & is.null(plink_results$result_table)) {
         shinyalert("Oops!", "No GWAS analysis performed to display", type = "error")
       }
-      else{
-        if(!is.null(vcf_results$result_table_gwas)){
-          manhattan_gwas$data <- vcf_results$result_table_gwas$server1
-          manhattan_gwas$featureCol <- 2
-          manhattan_gwas$chrCol <- 3
-          manhattan_gwas$posCol <- 4
-          manhattan_gwas$pvalCol <- 11
-        }
-        else{
-          manhattan_gwas$data <- plink_results$result_table$server1$results
-          manhattan_gwas$featureCol <- 2
-          manhattan_gwas$chrCol <- 1
-          manhattan_gwas$posCol <- 3
-          manhattan_gwas$pvalCol <- 9
-        }
-      }
+      # else{
+      #   # if(!is.null(vcf_results$result_table_gwas)){
+      #   #   manhattan_gwas$data <- vcf_results$result_table_gwas$server1
+      #   #   manhattan_gwas$featureCol <- 2
+      #   #   manhattan_gwas$chrCol <- 3
+      #   #   manhattan_gwas$posCol <- 4
+      #   #   manhattan_gwas$pvalCol <- 11
+      #   # }
+      #   # else{
+      #   #   manhattan_gwas$data <- plink_results$result_table$server1$results
+      #   #   manhattan_gwas$featureCol <- 2
+      #   #   manhattan_gwas$chrCol <- 1
+      #   #   manhattan_gwas$posCol <- 3
+      #   #   manhattan_gwas$pvalCol <- 9
+      #   # }
+      # }
     }
   })
   
@@ -373,7 +381,6 @@ server <- function(input, output, session) {
     })
     if(resources_match){
       withProgress(message = "Performing GWAS", {
-        browser()
         model <- paste0(input$vcf_var, "~", if(is.null(input$vcf_cov)){1} else{paste0(input$vcf_cov, collapse = "+")})
         vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
       })

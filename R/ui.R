@@ -23,8 +23,8 @@ sidebar <- dashboardSidebar(
     menuItem("Mixed statistic models", tabName = "statistic_models_mixed", icon = icon("dashboard")),
     menuItem("Genomics", tabName = "genomics", icon = icon("dashboard"),
              menuSubItem("Analysis with BioConductor", tabName = "vcf_files",icon = icon("dashboard")),
-             menuSubItem("Analysis with PLINK", tabName = "plink",icon = icon("dashboard")),
-             menuSubItem("GWAS plot", tabName = "gwas_plot",icon = icon("dashboard"))),
+             menuSubItem("Analysis with PLINK", tabName = "plink",icon = icon("dashboard"))
+             ),
     menuItem("Omics", tabName = "omics", icon = icon("dashboard"),
              menuSubItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
              )
@@ -133,10 +133,31 @@ body <- dashboardBody(
                      dataTableOutput("glmer_results_table")
             )
     ),
+    # tabItem(tabName = "plink",
+    #         fluidRow(
+    #                  fluidRow(
+    #                    column(12,
+    #                           textInput("command", "PLINK Shell command", width = "100%"),
+    #                           h5("NOTE: we avoid –out to indicate the output file"),
+    #                           h5("NOTE: No need to input plink as in a shell command"),
+    #                           code("plink < >"),
+    #                           h5("can be inputed as"),
+    #                           code("< >"),
+    #                           h5(""),
+    #                           actionButton("run_shell", "Run Shell command"),
+    #                           actionButton("plink_show_plain", "Show PLINK terminal output"),
+    #                           dataTableOutput("plink_results_table"),
+    #                           bsModal("plink_results_terminal", "PLINK Terminal output", "plink_show_plain",
+    #                                   verbatimTextOutput("plink_results_terminal_render")
+    #                                   )
+    #                  )
+    #                  )
+    #         )
+    # ),
     tabItem(tabName = "plink",
-            tabPanel('p link commands',
-                     fluidRow(
-                       column(12,
+            fluidRow(
+              tabBox(width = 12,
+                     tabPanel("PLINK",
                               textInput("command", "PLINK Shell command", width = "100%"),
                               h5("NOTE: we avoid –out to indicate the output file"),
                               h5("NOTE: No need to input plink as in a shell command"),
@@ -149,33 +170,36 @@ body <- dashboardBody(
                               dataTableOutput("plink_results_table"),
                               bsModal("plink_results_terminal", "PLINK Terminal output", "plink_show_plain",
                                       verbatimTextOutput("plink_results_terminal_render")
-                                      )
+                              )
+                     ),
+                     tabPanel("Manhattan Plot",
+                              plotOutput("manhattan2")
+                              
                      )
-                     )
+              )
             )
     ),
     tabItem(tabName = "vcf_files",
             fluidRow(
               tabBox(width = 12,
-                tabPanel("Contingency table",
-                  uiOutput("vcf_ct_selector"),
-                  h3("Counts"),
-                  dataTableOutput("vcf_ct_counts"),
-                  h3(id = "vcf_perc", "Percentages"),
-                  dataTableOutput("vcf_ct_perc")
-                ),
+                # tabPanel("Contingency table",
+                #   uiOutput("vcf_ct_selector"),
+                #   h3("Counts"),
+                #   dataTableOutput("vcf_ct_counts"),
+                #   h3(id = "vcf_perc", "Percentages"),
+                #   dataTableOutput("vcf_ct_perc")
+                # ),
                 tabPanel("GWAS",
                   uiOutput("vcf_selector_var"),
                   uiOutput("vcf_selector_cov"),
                   actionButton("gwas_trigger", "Perform GWAS"),
                   dataTableOutput("vcf_results")
+                ),
+                tabPanel("Manhattan Plot",
+                  plotOutput("manhattan")
+                  
                 )
               )
-            )
-    ),
-    tabItem(tabName = "gwas_plot",
-            fluidRow(
-              withSpinner(plotOutput("gwas_manhattan"))
             )
     ),
     tabItem(tabName = "limma",
