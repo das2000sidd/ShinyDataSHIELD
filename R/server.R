@@ -77,7 +77,22 @@ server <- function(input, output, session) {
           datashield.assign.resource(connection$conns, paste0("resource", i), resource_info)
           lists$available_tables <- rbind(lists$available_tables, 
                                           cbind(subset(resource_info, select = c("server", "resource")), 
-                                                resource_internal = paste0("resource", i)))
+                                                resource_internal = paste0("resource", i)), fill = TRUE)
+          # c("TidyFileResourceClient", "SQLResourceClient") correspond to resources that have to be coerded to data.frame
+          if (any(c("TidyFileResourceClient", "SQLResourceClient") %in% unlist(ds.class(paste0("resource", i), 
+                                                                                        datasources = connection$conns)))){
+            expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
+                       expr = quote(as.resource.data.frame(", paste0("resource", i), ")), conns = connection$conns)")
+            eval(str2expression(expression))
+            lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "table"]
+          }
+          # Otherwise coerce to R object
+          else {
+            expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
+                       expr = quote(as.resource.object(", paste0("resource", i), ")), conns = connection$conns)")
+            eval(str2expression(expression))
+            lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj"]
+          }
         }
       }
       connection$active <- TRUE
@@ -108,7 +123,7 @@ server <- function(input, output, session) {
     plink.arguments <- input$command
     incProgress(0.4)
     tryCatch({
-      plink_results$result_table <- ds.PLINK("resource_opal", plink.arguments, datasources = connection$conns)
+      plink_results$result_table <- ds.PLINK("resource1", plink.arguments, datasources = connection$conns)
       showElement("plink_show_plain")
     }, error = function(w){
       shinyalert("Oops!", "PLINK command yielded errors", type = "error")
@@ -122,10 +137,11 @@ server <- function(input, output, session) {
   
   observeEvent(input$run_limma, {
     withProgress(message = "Performing limma model", {
+      browser()
       limma_formula <- as.formula(paste0("~ ", paste0(input$limma_var, collapse = " + ")))
       incProgress(0.4)
       limma_results$result_table <- ds.limma(model = limma_formula,
-                                             Set = "resource_opal", 
+                                             Set = "resource1", 
                                              datasources = connection$conns,
                                              sva = input$limma_sva,
                                              annotCols = input$limma_lab)
@@ -264,15 +280,15 @@ server <- function(input, output, session) {
     }
     if(input$tabs == "limma") {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-      else if (!(any(c("ExpressionSet", "RangedSummarizedExperiment") %in% unlist(ds.class("resource_opal", connection$conns))))){
+      else if (!(any(c("ExpressionSet", "RangedSummarizedExperiment") %in% unlist(ds.class("resource1", connection$conns))))){
         shinyalert("Oops!", "Selected resource(s) is not an Expression Set or Range Summarized Experiment. Can't perform LIMMA", type = "error")
       }
       else {
         withProgress(message = "Loading Limma parameters", value = 0, {
           incProgress(0.2)
             # Take variables from the 1st selected dataset. They should be equal
-          lists$limma_variables <- ds.varLabels("resource_opal", datasources = connection$conns)$server1
-          lists$limma_labels <- ds.fvarLabels("resource_opal", datasources = connection$conns)$server1
+          lists$limma_variables <- ds.varLabels("resource1", datasources = connection$conns)$server1
+          lists$limma_labels <- ds.fvarLabels("resource1", datasources = connection$conns)$server1
           incProgress(0.6)
           output$limma_variables_selector <- renderUI({
             selectInput("limma_var", "Variables for the limma", lists$limma_variables, multiple = TRUE)
@@ -292,7 +308,7 @@ server <- function(input, output, session) {
     }
     if(input$tabs == "plink"){
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-      else if (!(any(c("SshResourceClient") %in% unlist(ds.class("resource_opal", connection$conns))))){
+      else if (!(any(c("SshResourceClient") %in% unlist(ds.class("resource1", connection$conns))))){
         shinyalert("Oops!", "Selected resource(s) is not a PLINK resource ", type = "error")
       }
       else{
@@ -301,35 +317,23 @@ server <- function(input, output, session) {
     }
     if(input$tabs == "vcf_files"){
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-      else if (!(any(c("GdsGenotypeReader", "GWASTools") %in% unlist(ds.class("resource_opal", connection$conns))))){
+      else if (!(any(c("GdsGenotypeReader", "GWASTools") %in% 
+                     unlist(lapply(unique(lists$available_tables$resource_internal), function(x) ds.class(x, connection$conns)))))){
         shinyalert("Oops!", "Selected resource(s) is not an GdsGenotypeReader or GWASTools.", type = "error")
       }
-      else if (length(connection$server_resource) > 1) {
-        shinyalert("Oops!", "VCF GWAS currently only implemented for 1 resource at a time", type = "error")
+      else if (length(unique(lists$available_tables$server)) > 1) {
+        shinyalert("Oops!", "VCF GWAS currently only implemented for 1 study at a time", type = "error")
       }
       else{
-        withProgress(message = "Loading variable names", {
-          new_res <- gsub('.{4}$', '', connection$server_resource$server1)
-          tryCatch({
-            datashield.assign.resource(connection$conns, symbol = "covars.vcf", 
-                                       resource = list(server1 = new_res))
-            datashield.assign.expr(connection$conns, symbol = "covars", 
-                                   expr = quote(as.resource.data.frame(covars.vcf)))
-            lists$vcf_covars <- ds.colnames("covars", datasources = connection$conns)
-          }, error = function(w){
-            shinyalert("Oops!", paste0("Could not find covariables resource: ", new_res), type = "error")
-          })
-          incProgress(0.6)
-          output$vcf_ct_selector <- renderUI({
-            selectInput("vcf_ct_var", "Covariable", lists$vcf_covars$server1)
-          })
-          
-          output$vcf_selector_var <- renderUI({
-            selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
-          })
-          output$vcf_selector_cov <- renderUI({
-            selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
-          })
+        # get colnames
+        lists$vcf_covars <- ds.colnames(lists$available_tables[type_resource == "table", resource_internal], 
+                                        datasources = connection$conns)
+        # render lists to select
+        output$vcf_selector_var <- renderUI({
+          selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
+        })
+        output$vcf_selector_cov <- renderUI({
+          selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
         })
       }
     }
@@ -359,7 +363,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$gwas_trigger, {
     tryCatch({
-      ds.GenotypeData(x='resource_opal', covars = 'covars', columnId = 1, newobj.name = 'gds.Data', datasources = connection$conns)
+      ds.GenotypeData(x=lists$available_tables[type_resource == "r_obj", resource_internal], 
+                      covars = lists$available_tables[type_resource == "table", resource_internal], 
+                      columnId = 1, newobj.name = 'gds.Data', datasources = connection$conns)
       resources_match <- TRUE
     }, error = function(w){
       shinyalert("Oops!", "Different individuals between vcf and covar files", type = "error")
@@ -367,6 +373,7 @@ server <- function(input, output, session) {
     })
     if(resources_match){
       withProgress(message = "Performing GWAS", {
+        browser()
         model <- paste0(input$vcf_var, "~", if(is.null(input$vcf_cov)){1} else{paste0(input$vcf_cov, collapse = "+")})
         vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
       })
