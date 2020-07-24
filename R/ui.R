@@ -74,30 +74,32 @@ body <- dashboardBody(
               tabBox(width = 12,
                      tabPanel("Summary",
                               uiOutput("d_statistics_table_selector"),
-                              uiOutput("d_statistics_server_selector"),
+                              actionButton("trigger_d_statistics", "Select table"),
                               uiOutput("d_statistics_variable_selector"),
-                              actionButton("trigger_d_statistics", "lesgo"),
                               dataTableOutput("descriptive_summary")
                      ),
                      tabPanel("Scatter plot",
-                              # uiOutput("d_statistics_table_selector_scatter"),
                               uiOutput("d_statistics_variable_selector_scatter"),
                               uiOutput("d_statistics_variable_selector_scatter2"),
-                              selectInput("d_statistics_scatter_type", "loool", c("combine", "split")),
-                              # actionButton("trigger_d_statistics_scatter", "lesgo"),
-                              # actionButton("d_statistics_scatter_plot_trigger", "lesgoplot"),
-                              uiOutput("d_statistics_scatter_plot_ui")
+                              selectInput("d_statistics_scatter_type", "Plot type", c("combine", "split")),
+                              hidden(h5(id = "d_statistics_scatter_plot_error", "One of the variables is a factor,
+                                        a Scatter plot can't be generated")),
+                              withSpinner(plotOutput("d_statistics_scatter_plot")) 
                      ),
                      tabPanel("Histogram",
                               uiOutput("d_statistics_variable_selector_histogram"),
-                              selectInput("d_statistics_histogram_type", "loool", c("combine", "split")),
-                              uiOutput("d_statistics_histogram_plot_ui")
+                              selectInput("d_statistics_histogram_type", "Plot type", c("combine", "split")),
+                              hidden(h5(id = "d_statistics_histogram_plot_error", "The variables is a factor,
+                                        a Histogram can't be generated")),
+                              withSpinner(plotOutput("d_statistics_histogram_plot")) 
                      ),
                      tabPanel("Heatmap",
                               uiOutput("d_statistics_variable_selector_heatmap"),
                               uiOutput("d_statistics_variable_selector_heatmap2"),
-                              selectInput("d_statistics_heatmap_type", "loool", c("combine", "split")),
-                              uiOutput("d_statistics_heatmap_plot_ui")
+                              selectInput("d_statistics_heatmap_type", "Plot type", c("combine", "split")),
+                              hidden(h5(id = "d_statistics_heatmap_plot_error", "One of the variables is a factor,
+                                        a Heatmap can't be generated")),
+                              withSpinner(plotOutput("d_statistics_heatmap_plot"))
                      )
               )
             )
@@ -106,14 +108,16 @@ body <- dashboardBody(
             tabPanel('statistic_models',
                      fluidRow(
                        column(6,
-                              textInput("glm_formula", "Input GLM formula:")
+                              textInput("glm_formula", "Input GLM formula:"),
+                              actionButton("trigger_formula_help_glm", "Formula input help"),
+                              actionButton("perform_glm", "Perform GLM")
                        ),
                        column(6,
-                              selectInput("gml_output_family", "Output family:", c("gaussian", "poisson", "binomial"))
+                              selectInput("gml_output_family", "Output family:", c("gaussian", "poisson", "binomial")),
+                              actionButton("gml_toggle_variables_table","Toggle variables table")
                        )
                      ),
                      dataTableOutput("available_variables_type"),
-                     actionButton("perform_glm", "Perform GLM"),
                      dataTableOutput("glm_results_table")
             )
     ),
@@ -121,39 +125,19 @@ body <- dashboardBody(
             tabPanel('statistic_models_mixed',
                      fluidRow(
                        column(6,
-                              textInput("glmer_formula", "Input GLMer formula:")
+                              textInput("glmer_formula", "Input GLMer formula:"),
+                              actionButton("trigger_formula_help_glmer", "Formula input help"),
+                              actionButton("perform_glmer", "Perform GLMer")
                        ),
                        column(6,
-                              selectInput("gmler_output_family", "Output family:", c("poisson", "binomial"))
+                              selectInput("gmler_output_family", "Output family:", c("poisson", "binomial")),
+                              actionButton("gmler_toggle_variables_table","Toggle variables table")
                        )
                      ),
                      dataTableOutput("available_variables_type2"),
-                     actionButton("perform_glmer", "Perform GLMer"),
-                     actionButton("stop", "stop"),
                      dataTableOutput("glmer_results_table")
             )
     ),
-    # tabItem(tabName = "plink",
-    #         fluidRow(
-    #                  fluidRow(
-    #                    column(12,
-    #                           textInput("command", "PLINK Shell command", width = "100%"),
-    #                           h5("NOTE: we avoid –out to indicate the output file"),
-    #                           h5("NOTE: No need to input plink as in a shell command"),
-    #                           code("plink < >"),
-    #                           h5("can be inputed as"),
-    #                           code("< >"),
-    #                           h5(""),
-    #                           actionButton("run_shell", "Run Shell command"),
-    #                           actionButton("plink_show_plain", "Show PLINK terminal output"),
-    #                           dataTableOutput("plink_results_table"),
-    #                           bsModal("plink_results_terminal", "PLINK Terminal output", "plink_show_plain",
-    #                                   verbatimTextOutput("plink_results_terminal_render")
-    #                                   )
-    #                  )
-    #                  )
-    #         )
-    # ),
     tabItem(tabName = "plink",
             fluidRow(
               tabBox(width = 12,
@@ -173,8 +157,7 @@ body <- dashboardBody(
                               )
                      ),
                      tabPanel("Manhattan Plot",
-                              plotOutput("manhattan2")
-                              
+                              withSpinner(plotOutput("manhattan2"))
                      )
               )
             )
@@ -182,13 +165,6 @@ body <- dashboardBody(
     tabItem(tabName = "vcf_files",
             fluidRow(
               tabBox(width = 12,
-                # tabPanel("Contingency table",
-                #   uiOutput("vcf_ct_selector"),
-                #   h3("Counts"),
-                #   dataTableOutput("vcf_ct_counts"),
-                #   h3(id = "vcf_perc", "Percentages"),
-                #   dataTableOutput("vcf_ct_perc")
-                # ),
                 tabPanel("GWAS",
                   uiOutput("vcf_selector_var"),
                   uiOutput("vcf_selector_cov"),
@@ -196,8 +172,7 @@ body <- dashboardBody(
                   dataTableOutput("vcf_results")
                 ),
                 tabPanel("Manhattan Plot",
-                  plotOutput("manhattan")
-                  
+                  withSpinner(plotOutput("manhattan"))
                 )
               )
             )
@@ -208,7 +183,8 @@ body <- dashboardBody(
                        column(6,
                               uiOutput("limma_variables_selector"),
                               uiOutput("limma_labels_selector"),
-                              uiOutput("limma_sva_selector")
+                              uiOutput("limma_sva_selector"),
+                              selectInput("limma_data_type", "Data type:", c("RNAseq", "microarray"))
                        )
                      ),
                      fluidRow(

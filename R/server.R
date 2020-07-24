@@ -39,74 +39,86 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$connect_selected, {
-    ## IMPLEMENT CONSISTENCY CHECK IF MULTIPLE STUDIES, IF TABLES , ALL STUDIES MUST HAVE SAME COLUMNS!
-    tryCatch({
-      # Create all the study servers
-      connection$builder <- newDSLoginBuilder()
-      for(server_iter in connection$server_resources$server) {
-        connection$builder$append(server = server_iter, url = input$url,
-                                  user = input$user, password = input$password,
-                                  driver = "OpalDriver")
-      }
-      
-      # Login into the servers
-      connection$logindata <- connection$builder$build()
-      connection$conns <- datashield.login(logins = connection$logindata)
-
-      # Load resources and tables
-      resources <- data.table(matrix(unlist(strsplit(connection$server_resources$resources, split = ", ")), nrow = nrow(connection$server_resources), byrow = TRUE))
-      if(connection$server_resources$table == TRUE) {
-        connection$isTable <- TRUE
-        for(i in 1:ncol(resources)) {
-          aux <- as.character(unlist(resources[, i, with = FALSE]))
-          table_info <- connection$server_resources[, table := connection$server_resources[, paste(project, aux, sep = ".")]]
-          datashield.assign.table(connection$conns, paste0("table", i), table_info)
-          lists$available_tables <- rbind(lists$available_tables, 
-                                          cbind(subset(table_info, select = c("server", "table")), 
-                                                table_internal = paste0("table", i)))
+    withProgress(message = "Connecting to selected studies", value = 0.5, {
+      tryCatch({
+        # Create all the study servers
+        connection$builder <- newDSLoginBuilder()
+        for(server_iter in connection$server_resources$server) {
+          connection$builder$append(server = server_iter, url = input$url,
+                                    user = input$user, password = input$password,
+                                    driver = "OpalDriver")
         }
-        lists$table_columns <- ds.colnames("table1", datasources = connection$conns)$server1
-        types <- lapply(paste0("table1$", lists$table_columns), function(x) ds.class(x, datasources = connection$conns[1]))
-        lists$table_columns_types <- data.frame(variable = lists$table_columns, type = unlist(types))
-      }
-      else {
-        connection$isTable <- FALSE
-        for(i in 1:ncol(resources)) {
-          aux <- as.character(unlist(resources[, i, with = FALSE]))
-          resource_info <- connection$server_resources[, resource := connection$server_resources[, paste(project, aux, sep = ".")]]
-          datashield.assign.resource(connection$conns, paste0("resource", i), resource_info)
-          lists$available_tables <- rbind(lists$available_tables, 
-                                          cbind(subset(resource_info, select = c("server", "resource")), 
-                                                resource_internal = paste0("resource", i)), fill = TRUE)
-          resource_type <- unlist(ds.class(paste0("resource", i), 
-                                           datasources = connection$conns))
-          # c("TidyFileResourceClient", "SQLResourceClient") correspond to resources that have to be coerded to data.frame
-          if (any(c("TidyFileResourceClient", "SQLResourceClient") %in% resource_type)){
-            expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
+        
+        # Login into the servers
+        connection$logindata <- connection$builder$build()
+        connection$conns <- datashield.login(logins = connection$logindata)
+        
+        # Load resources and tables
+        resources <- data.table(matrix(unlist(strsplit(connection$server_resources$resources, split = ", ")), nrow = nrow(connection$server_resources), byrow = TRUE))
+        if(connection$server_resources$table == TRUE) {
+          connection$isTable <- TRUE
+          for(i in 1:ncol(resources)) {
+            aux <- as.character(unlist(resources[, i, with = FALSE]))
+            table_info <- connection$server_resources[, table := connection$server_resources[, paste(project, aux, sep = ".")]]
+            datashield.assign.table(connection$conns, paste0("table", i), table_info)
+            lists$available_tables <- rbind(lists$available_tables, 
+                                            cbind(subset(table_info, select = c("server", "table")), 
+                                                  table_internal = paste0("table", i), type_resource = "table"))
+          }
+          lists$table_columns <- ds.colnames("table1", datasources = connection$conns)$server1
+          types <- lapply(paste0("table1$", lists$table_columns), function(x) ds.class(x, datasources = connection$conns[1]))
+          lists$table_columns_types <- data.frame(variable = lists$table_columns, type = unlist(types))
+        }
+        else {
+          connection$isTable <- FALSE
+          for(i in 1:ncol(resources)) {
+            aux <- as.character(unlist(resources[, i, with = FALSE]))
+            resource_info <- connection$server_resources[, resource := connection$server_resources[, paste(project, aux, sep = ".")]]
+            datashield.assign.resource(connection$conns, paste0("resource", i), resource_info)
+            lists$available_tables <- rbind(lists$available_tables, 
+                                            cbind(subset(resource_info, select = c("server", "resource")), 
+                                                  resource_internal = paste0("resource", i)), fill = TRUE)
+            resource_type <- unlist(ds.class(paste0("resource", i), 
+                                             datasources = connection$conns))
+            # c("TidyFileResourceClient", "SQLResourceClient") correspond to resources that have to be coerded to data.frame
+            if (any(c("TidyFileResourceClient", "SQLResourceClient") %in% resource_type)){
+              expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
                        expr = quote(as.resource.data.frame(", paste0("resource", i), ")), conns = connection$conns)")
-            eval(str2expression(expression))
-            lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "table"]
-          }
-          # "SshResourceClient" correspond to ssh resources, don't need to coerce them
-          else if ("SshResourceClient" %in% resource_type){
-            break
-            lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "ssh"]
-          }
-          # Otherwise coerce to R object
-          else {
-            expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
+              eval(str2expression(expression))
+              lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "table"]
+              expr <- paste0("datashield.assign.expr(connection$conns, symbol = 'table1', 
+                                   expr = quote(", paste0("resource", i), "))")
+              eval(str2expression(expr))
+              
+              lists$table_columns <- ds.colnames("table1", datasources = connection$conns)$server1
+              types <- lapply(paste0("table1$", lists$table_columns), function(x) ds.class(x, datasources = connection$conns[1]))
+              lists$table_columns_types <- data.frame(variable = lists$table_columns, type = unlist(types))
+              lists$available_tables[resource == resource_info$resource, table := resource]
+              lists$available_tables[resource == resource_info$resource, table_internal := "table1"]
+            }
+            # "SshResourceClient" correspond to ssh resources, don't need to coerce them
+            else if ("SshResourceClient" %in% resource_type){
+              break
+              lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "ssh"]
+            }
+            # Otherwise coerce to R object
+            else {
+              expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
                        expr = quote(as.resource.object(", paste0("resource", i), ")), conns = connection$conns)")
-            eval(str2expression(expression))
-            lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj"]
+              eval(str2expression(expression))
+              lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj"]
+            }
           }
         }
-      }
-      connection$active <- TRUE
-    }, error = function(w){
-      datashield.logout(connection$conns)
-      opal.logout(connection$opal_conection)
-      shinyalert("Oops!", "Broken resource", type = "error")
+        connection$active <- TRUE
+      }, error = function(w){
+        datashield.logout(connection$conns)
+        opal.logout(connection$opal_conection)
+        shinyalert("Oops!", "Broken resource", type = "error")
+      })
     })
+    ## IMPLEMENT CONSISTENCY CHECK IF MULTIPLE STUDIES, IF TABLES , ALL STUDIES MUST HAVE SAME COLUMNS!
+    
   })
   
   observeEvent(input$project_selected, {
@@ -149,7 +161,8 @@ server <- function(input, output, session) {
                                              Set = "resource1", 
                                              datasources = connection$conns,
                                              sva = input$limma_sva,
-                                             annotCols = input$limma_lab)
+                                             annotCols = input$limma_lab,
+                                             type.data = input$limma_data_type)
       incProgress(0.8)
     })
     if (length(connection$server_resource) > 1) {
@@ -229,18 +242,6 @@ server <- function(input, output, session) {
   #   # })
   # })
   
-  output$d_statistics_scatter_plot_ui <- renderUI({
-    plotOutput("d_statistics_scatter_plot")
-  })
-  
-  output$d_statistics_histogram_plot_ui <- renderUI({
-    plotOutput("d_statistics_histogram_plot")
-  })
-  
-  output$d_statistics_heatmap_plot_ui <- renderUI({
-    plotOutput("d_statistics_heatmap_plot")
-  })
-  
   output$d_statistics_table_selector <- renderUI({
     selectInput("d_statistics_table_selector_value", "Select table", lists$available_tables$table)
   })
@@ -263,25 +264,79 @@ server <- function(input, output, session) {
     selectInput("d_statistics_variable_selector_heatmap_value2", "Select variable", lists$table_columns)
   })
   
+  observeEvent(input$gml_toggle_variables_table, {
+    toggleElement("available_variables_type")
+  })
+  
   observeEvent(input$perform_glm, {
-    glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "table1", family = input$gml_output_family,
-           datasources = connection$conns)
+    tryCatch({
+      withProgress(message = "Performing GLM", value = 0.5, {
+        glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "table1", family = input$gml_output_family,
+                                               datasources = connection$conns)
+      })
+    }, error = function(w){
+      shinyalert("Oops!", "Error performing the GLM", type = "error")
+    })
+    
+  })
+  
+  observeEvent(input$trigger_formula_help_glm, {
+    shinyalert("Formula structure", "y~a+b+c+d
+    Means fit a GLM with y as the outcome variable and a, b, c and d as covariates. By default all models include an intercept (regression constant) term, to exclude it use:
+    y~0+a+b+c+d
+    The * symbol between two covariates means fit all possible main effects and interactions for and between those two covariates, as example:
+    y~a*b", type = "info")
+  })
+  
+  observeEvent(input$gmler_toggle_variables_table, {
+    toggleElement("available_variables_type2")
   })
   
   observeEvent(input$perform_glmer, {
-    glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "table1", family = input$gmler_output_family,
-                                           datasources = connection$conns)
+    tryCatch({
+      withProgress(message = "Performing GLMer", value = 0.5, {
+        glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "table1", family = input$gmler_output_family,
+                                                       datasources = connection$conns)
+      }) 
+    }, error = function(w){
+      shinyalert("Oops!", "Error performing the GLMer", type = "error")
+    })
+    
+  })
+  
+  observeEvent(input$trigger_formula_help_glmer, {
+    shinyalert("Formula structure", "y~a+b+(1|c)
+    Means fit an GLME with y as the outcome variable (e.g. a binary case-control using a logistic regression model or a count or a survival time using a Poisson regression model), a and b as fixed effects, and c as a random effect or grouping factor.
+    It is also possible to fit models with random slopes by specifying a model such as
+    y~a+b+(1+b|c)
+    where the effect of b can vary randomly between groups defined by c. Implicit nesting can be specified with formulas such as: 
+    y~a+b+(1|c/d) or y~a+b+(1|c)+(1|c:d)", type = "info")
   })
   
   observe({
     if(input$tabs == "d_statistics") {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-      else if (connection$isTable == FALSE) {
+      else if (unique(lists$available_tables$type_resource) == "table") {
+        # datashield.assign.expr(connection$conns, "table1", quote(resource1))
+      }
+      else {
         shinyalert("Oops!", "Descriptive analysis only available for tables", type = "error")
       }
       # else {
       #   
       # }
+    }
+    if(input$tabs == "statistic_models"){
+      if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (unique(lists$available_tables$type_resource) != "table") {
+        shinyalert("Oops!", "Statistic models only available for tables", type = "error")
+      }
+    }
+    if(input$tabs == "statistic_models_mixed"){
+      if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
+      else if (unique(lists$available_tables$type_resource) != "table") {
+        shinyalert("Oops!", "Mixed statistic models only available for tables", type = "error")
+      }
     }
     if(input$tabs == "limma") {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}

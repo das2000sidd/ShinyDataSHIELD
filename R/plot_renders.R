@@ -1,28 +1,30 @@
 output$d_statistics_scatter_plot <- renderPlot({
   tryCatch({
+    hide("d_statistics_scatter_plot_error")
     ds.scatterPlot(x = paste0("table1$", input$d_statistics_variable_selector_scatter_value), 
                    y = paste0("table1$", input$d_statistics_variable_selector_scatter_value2),
                    type = input$d_statistics_scatter_type,
                    datasources = connection$conns)
-  }, error = function(w){})
-  
+  }, error = function(w){show("d_statistics_scatter_plot_error")})
 })
 
 output$d_statistics_histogram_plot <- renderPlot({
   tryCatch({
+    hide("d_statistics_histogram_plot_error")
     ds.histogram(x = paste0("table1$", input$d_statistics_variable_selector_histogram_value),
                  type = input$d_statistics_histogram_type,
                  datasources = connection$conns)
-  }, error = function(w){})
+  }, error = function(w){show("d_statistics_histogram_plot_error")})
 })
 
 output$d_statistics_heatmap_plot <- renderPlot({
   tryCatch({
+    hide("d_statistics_heatmap_plot_error")
     ds.heatmapPlot(x = paste0("table1$", input$d_statistics_variable_selector_heatmap_value),
                    y = paste0("table1$", input$d_statistics_variable_selector_heatmap_value2),
                    type = input$d_statistics_heatmap_type,
                    datasources = connection$conns)
-  }, error = function(w){})
+  }, error = function(w){show("d_statistics_heatmap_plot_error")})
 })
 
 output$manhattan <- renderPlot({
