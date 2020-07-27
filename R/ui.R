@@ -73,8 +73,6 @@ body <- dashboardBody(
             fluidRow(
               tabBox(width = 12,
                      tabPanel("Summary",
-                              uiOutput("d_statistics_table_selector"),
-                              actionButton("trigger_d_statistics", "Select table"),
                               uiOutput("d_statistics_variable_selector"),
                               dataTableOutput("descriptive_summary")
                      ),

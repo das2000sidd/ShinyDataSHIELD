@@ -1,20 +1,11 @@
 output$descriptive_summary <- renderDT(
   tryCatch({
-    if(ds.class(paste0(lists$available_tables[table == input$d_statistics_table_selector_value]$table_internal, "$", 
-                       input$d_statistics_variable_selector_value), datasources = connection$conns) == "factor") {
-      ## DS.TABLE1D OUTPUTS STATISTICS FOR THE STUDIES COMBINED, FIND HOW TO SELECT BETWEEN STUDIES!
-      taula = ds.table1D(paste0(lists$available_tables[table == input$d_statistics_table_selector_value]$table_internal, "$", 
-                                input$d_statistics_variable_selector_value), 
-                         datasources = connection$conns)$counts
-      data.table(Values = rownames(taula), Count = taula)
+    if(ds.class(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns) == "factor") {
+      taula <- ds.table1D(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns)$counts
+      data.table(Values = rownames(taula), Count = taula[,1])
     }
     else {
-      Quantiles <- ds.summary(paste0(lists$available_tables[table == input$d_statistics_table_selector_value]$table_internal, "$", 
-                                     input$d_statistics_variable_selector_value), 
-                              datasources = connection$conns)
-      Quantiles <- eval(str2expression(paste0("Quantiles$", 
-                                              lists$available_tables[table == input$d_statistics_table_selector_value]$server,
-                                              "$`quantiles & mean`")))
+      Quantiles <- ds.quantileMean(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns)
       data.table(Quantiles = names(Quantiles), Value = Quantiles)
     }
   }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c(0))))

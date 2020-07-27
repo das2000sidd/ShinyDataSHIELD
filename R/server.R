@@ -7,8 +7,7 @@ server <- function(input, output, session) {
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
-  # manhattan_gwas <- reactiveValues(data = NULL, featureCol = NULL, chrCol = NULL, posCol = NULL, pvalCol = NULL)
-  
+
   observeEvent(input$connect_server, {
     tryCatch({
       connection$opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
@@ -218,29 +217,9 @@ server <- function(input, output, session) {
     ) 
   })
   
-  observeEvent(input$trigger_d_statistics ,{
-    lists$table_columns <- ds.colnames(lists$available_tables[table == input$d_statistics_table_selector_value]$table_internal, 
-                                 datasources = connection$conns)
-    lists$table_columns <- eval(str2expression(paste0("lists$table_columns$", 
-                                                lists$available_tables[table == input$d_statistics_table_selector_value]$server)))
-    output$d_statistics_variable_selector <- renderUI({
-      selectInput("d_statistics_variable_selector_value", "Select variable", lists$table_columns)
-    })
+  output$d_statistics_variable_selector <- renderUI({
+    selectInput("d_statistics_variable_selector_value", "Select variable", lists$table_columns)
   })
-  
-  # observeEvent(input$trigger_d_statistics_scatter ,{
-  #   # lists$table_columns <- ds.colnames(input$d_statistics_table_selector_scatter_value, 
-  #   #                              datasources = connection$conns)
-  #   # lists$table_columns <- eval(str2expression(paste0("lists$table_columns$", 
-  #   #                                             lists$available_tables[table_internal == input$d_statistics_table_selector_scatter_value]$server)))
-  #   # lists$table_columns <- ds.colnames("table1", datasources = connection$conns)$server1
-  #   # output$d_statistics_variable_selector_scatter <- renderUI({
-  #   #   selectInput("d_statistics_variable_selector_scatter_value", "Select variable", lists$table_columns)
-  #   # })
-  #   # output$d_statistics_variable_selector_scatter2 <- renderUI({
-  #   #   selectInput("d_statistics_variable_selector_scatter_value2", "Select variable", lists$table_columns)
-  #   # })
-  # })
   
   output$d_statistics_table_selector <- renderUI({
     selectInput("d_statistics_table_selector_value", "Select table", lists$available_tables$table)
@@ -318,6 +297,7 @@ server <- function(input, output, session) {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
       else if (unique(lists$available_tables$type_resource) == "table") {
         # datashield.assign.expr(connection$conns, "table1", quote(resource1))
+        
       }
       else {
         shinyalert("Oops!", "Descriptive analysis only available for tables", type = "error")
@@ -405,22 +385,6 @@ server <- function(input, output, session) {
       else if (is.null(vcf_results$result_table_gwas) & is.null(plink_results$result_table)) {
         shinyalert("Oops!", "No GWAS analysis performed to display", type = "error")
       }
-      # else{
-      #   # if(!is.null(vcf_results$result_table_gwas)){
-      #   #   manhattan_gwas$data <- vcf_results$result_table_gwas$server1
-      #   #   manhattan_gwas$featureCol <- 2
-      #   #   manhattan_gwas$chrCol <- 3
-      #   #   manhattan_gwas$posCol <- 4
-      #   #   manhattan_gwas$pvalCol <- 11
-      #   # }
-      #   # else{
-      #   #   manhattan_gwas$data <- plink_results$result_table$server1$results
-      #   #   manhattan_gwas$featureCol <- 2
-      #   #   manhattan_gwas$chrCol <- 1
-      #   #   manhattan_gwas$posCol <- 3
-      #   #   manhattan_gwas$pvalCol <- 9
-      #   # }
-      # }
     }
   })
   
