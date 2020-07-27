@@ -82,14 +82,14 @@ body <- dashboardBody(
                               selectInput("d_statistics_scatter_type", "Plot type", c("combine", "split")),
                               hidden(h5(id = "d_statistics_scatter_plot_error", "One of the variables is a factor,
                                         a Scatter plot can't be generated")),
-                              withSpinner(plotOutput("d_statistics_scatter_plot")) 
+                              withSpinner(plotOutput("d_statistics_scatter_plot"))
                      ),
                      tabPanel("Histogram",
                               uiOutput("d_statistics_variable_selector_histogram"),
                               selectInput("d_statistics_histogram_type", "Plot type", c("combine", "split")),
                               hidden(h5(id = "d_statistics_histogram_plot_error", "The variables is a factor,
                                         a Histogram can't be generated")),
-                              withSpinner(plotOutput("d_statistics_histogram_plot")) 
+                              withSpinner(plotOutput("d_statistics_histogram_plot"))
                      ),
                      tabPanel("Heatmap",
                               uiOutput("d_statistics_variable_selector_heatmap"),
@@ -148,7 +148,7 @@ body <- dashboardBody(
                               code("< >"),
                               h5(""),
                               actionButton("run_shell", "Run Shell command"),
-                              actionButton("plink_show_plain", "Show PLINK terminal output"),
+                              hidden(actionButton("plink_show_plain", "Show PLINK terminal output")),
                               dataTableOutput("plink_results_table"),
                               bsModal("plink_results_terminal", "PLINK Terminal output", "plink_show_plain",
                                       verbatimTextOutput("plink_results_terminal_render")
