@@ -2,7 +2,7 @@ server <- function(input, output, session) {
   source("table_renders.R", local = TRUE)
   source("plot_renders.R", local = TRUE)
   connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
-  lists <- reactiveValues(limma_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
+  lists <- reactiveValues(resource_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
   glm_results <- reactiveValues(glm_result_table = NULL, glmer_result_table = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
@@ -105,7 +105,38 @@ server <- function(input, output, session) {
               expression = paste0("datashield.assign.expr(symbol = '", paste0("resource", i), "', 
                        expr = quote(as.resource.object(", paste0("resource", i), ")), conns = connection$conns)")
               eval(str2expression(expression))
-              lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj"]
+              resource_type <- unlist(ds.class(paste0("resource", i), 
+                                               datasources = connection$conns))
+              if("GWASTools" %in% resource_type) {
+                lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj_vcf"]
+              }
+              else if("ExpressionSet" %in% resource_type) {
+                lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj_eset"]
+                expr <- paste0("datashield.assign.expr(connection$conns, symbol = 'table1', 
+                                   expr = quote(", paste0("resource", i), "))")
+                eval(str2expression(expr))
+                # 
+                # lists$table_columns <- ds.colnames("table1", datasources = connection$conns)$server1
+                # types <- lapply(paste0("table1$", lists$table_columns), function(x) ds.class(x, datasources = connection$conns[1]))
+                # lists$table_columns_types <- data.frame(variable = lists$table_columns, type = unlist(types))
+                # lists$available_tables[resource == resource_info$resource, table := resource]
+                # lists$available_tables[resource == resource_info$resource, table_internal := "table1"]
+                # 
+                
+                
+                
+                # lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj_eset"]
+                lists$resource_variables <- ds.varLabels(paste0("resource", i), datasources = connection$conns)$server1
+                lists$table_columns <- lists$resource_variables
+              }
+              else if("RangedSummarizedExperiment" %in% resource_type) {
+                lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj_rse"]
+                lists$resource_variables <- ds.varLabels(paste0("resource", i), datasources = connection$conns)$server1
+              }
+              else {
+                lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj"]
+              }
+              
             }
           }
         }
@@ -295,12 +326,12 @@ server <- function(input, output, session) {
   observe({
     if(input$tabs == "d_statistics") {
       if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-      else if (unique(lists$available_tables$type_resource) == "table") {
+      else if (any(unique(lists$available_tables$type_resource) == c("table", "r_obj_eset", "r_obj_rse"))) {
         # datashield.assign.expr(connection$conns, "table1", quote(resource1))
         
       }
       else {
-        shinyalert("Oops!", "Descriptive analysis only available for tables", type = "error")
+        shinyalert("Oops!", "Descriptive analysis only available for tables, RSE or eSets", type = "error")
       }
       # else {
       #   
@@ -327,14 +358,14 @@ server <- function(input, output, session) {
         withProgress(message = "Loading Limma parameters", value = 0, {
           incProgress(0.2)
             # Take variables from the 1st selected dataset. They should be equal
-          lists$limma_variables <- ds.varLabels("resource1", datasources = connection$conns)$server1
+          # lists$resource_variables <- ds.varLabels("resource1", datasources = connection$conns)$server1
           
-          ## ds.fvarLabels is crashing for RSE datasets (works for eSets tho)
+          ## ds.fvarLabels is crashing for RSE datasets ( ds.varLabels works for eSets tho )
           
           # lists$limma_labels <- ds.fvarLabels("resource1", datasources = connection$conns)$server1
           incProgress(0.6)
-          output$limma_variables_selector <- renderUI({
-            selectInput("limma_var", "Variables for the limma", lists$limma_variables, multiple = TRUE)
+          output$resource_variables_selector <- renderUI({
+            selectInput("limma_var", "Variables for the limma", lists$resource_variables, multiple = TRUE)
           })
           incProgress(0.8)
           output$limma_labels_selector <- renderUI({
@@ -390,7 +421,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$gwas_trigger, {
     tryCatch({
-      ds.GenotypeData(x=lists$available_tables[type_resource == "r_obj", resource_internal], 
+      ds.GenotypeData(x=lists$available_tables[type_resource == "r_obj_vcf", resource_internal], 
                       covars = lists$available_tables[type_resource == "table", resource_internal], 
                       columnId = 1, newobj.name = 'gds.Data', datasources = connection$conns)
       resources_match <- TRUE
