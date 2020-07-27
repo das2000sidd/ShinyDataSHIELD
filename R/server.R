@@ -115,23 +115,18 @@ server <- function(input, output, session) {
                 expr <- paste0("datashield.assign.expr(connection$conns, symbol = 'table1', 
                                    expr = quote(", paste0("resource", i), "))")
                 eval(str2expression(expr))
-                # 
-                # lists$table_columns <- ds.colnames("table1", datasources = connection$conns)$server1
-                # types <- lapply(paste0("table1$", lists$table_columns), function(x) ds.class(x, datasources = connection$conns[1]))
-                # lists$table_columns_types <- data.frame(variable = lists$table_columns, type = unlist(types))
-                # lists$available_tables[resource == resource_info$resource, table := resource]
-                # lists$available_tables[resource == resource_info$resource, table_internal := "table1"]
-                # 
                 
-                
-                
-                # lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj_eset"]
                 lists$resource_variables <- ds.varLabels(paste0("resource", i), datasources = connection$conns)$server1
                 lists$table_columns <- lists$resource_variables
               }
               else if("RangedSummarizedExperiment" %in% resource_type) {
                 lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj_rse"]
+                expr <- paste0("datashield.assign.expr(connection$conns, symbol = 'table1', 
+                                   expr = quote(", paste0("resource", i), "))")
+                eval(str2expression(expr))
+                
                 lists$resource_variables <- ds.varLabels(paste0("resource", i), datasources = connection$conns)$server1
+                lists$table_columns <- lists$resource_variables
               }
               else {
                 lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "r_obj"]
