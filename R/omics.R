@@ -35,7 +35,7 @@ observe({
         
         # lists$limma_labels <- ds.fvarLabels("resource1", datasources = connection$conns)$server1
         incProgress(0.6)
-        output$resource_variables_selector <- renderUI({
+        output$limma_variables_selector <- renderUI({
           selectInput("limma_var", "Variables for the limma", lists$resource_variables, multiple = TRUE)
         })
         incProgress(0.8)

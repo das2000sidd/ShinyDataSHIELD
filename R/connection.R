@@ -16,6 +16,21 @@ observeEvent(input$connect_server, {
   })
 })
 
+observeEvent(input$project_selected, {
+  lists$resources <- tryCatch({
+    connection$isTable <- FALSE
+    opal.resources(connection$opal_conection, input$project_selected)$name
+  }, error = function(w){NULL})
+  if (is.null(lists$resources)) {
+    lists$resources <- opal.tables(connection$opal_conection, input$project_selected)$name
+    connection$isTable <- TRUE
+  }
+  output$resource_selector <- renderUI({
+    selectInput("resource_selected", "Resource", lists$resources, multiple = TRUE)
+  })
+  connection$complete <- TRUE
+})
+
 observeEvent(input$add_server, {
   connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("server", connection$num_servers + 1), project = input$project_selected, resources = paste(input$resource_selected, collapse = ", "), table = connection$isTable))
   connection$num_servers <- connection$num_servers + 1
@@ -45,7 +60,7 @@ observeEvent(input$connect_selected, {
       # Load resources and tables
       resources <- data.table(matrix(unlist(strsplit(connection$server_resources$resources, split = ", ")), nrow = nrow(connection$server_resources), byrow = TRUE))
       if(connection$server_resources$table == TRUE) {
-        connection$isTable <- TRUE
+        # connection$isTable <- TRUE
         for(i in 1:ncol(resources)) {
           aux <- as.character(unlist(resources[, i, with = FALSE]))
           table_info <- connection$server_resources[, table := connection$server_resources[, paste(project, aux, sep = ".")]]
@@ -59,7 +74,7 @@ observeEvent(input$connect_selected, {
         lists$table_columns_types <- data.frame(variable = lists$table_columns, type = unlist(types))
       }
       else {
-        connection$isTable <- FALSE
+        # connection$isTable <- FALSE
         for(i in 1:ncol(resources)) {
           aux <- as.character(unlist(resources[, i, with = FALSE]))
           resource_info <- connection$server_resources[, resource := connection$server_resources[, paste(project, aux, sep = ".")]]
@@ -136,17 +151,3 @@ observeEvent(input$connect_selected, {
   
 })
 
-observeEvent(input$project_selected, {
-  lists$resources <- tryCatch({
-    connection$isTable <- FALSE
-    opal.resources(connection$opal_conection, input$project_selected)$name
-  }, error = function(w){NULL})
-  if (is.null(lists$resources)) {
-    lists$resources <- opal.tables(connection$opal_conection, input$project_selected)$name
-    connection$isTable <- TRUE
-  }
-  output$resource_selector <- renderUI({
-    selectInput("resource_selected", "Resource", lists$resources, multiple = TRUE)
-  })
-  connection$complete <- TRUE
-})

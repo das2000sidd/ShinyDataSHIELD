@@ -80,14 +80,14 @@ body <- dashboardBody(
                               uiOutput("d_statistics_variable_selector_scatter"),
                               uiOutput("d_statistics_variable_selector_scatter2"),
                               selectInput("d_statistics_scatter_type", "Plot type", c("combine", "split")),
-                              hidden(h5(id = "d_statistics_scatter_plot_error", "One of the variables is a factor,
+                              hidden(h5(id = "d_statistics_scatter_plot_error", "One of the variables not numerical,
                                         a Scatter plot can't be generated")),
                               withSpinner(plotOutput("d_statistics_scatter_plot"))
                      ),
                      tabPanel("Histogram",
                               uiOutput("d_statistics_variable_selector_histogram"),
                               selectInput("d_statistics_histogram_type", "Plot type", c("combine", "split")),
-                              hidden(h5(id = "d_statistics_histogram_plot_error", "The variables is a factor,
+                              hidden(h5(id = "d_statistics_histogram_plot_error", "The variables is not numerical,
                                         a Histogram can't be generated")),
                               withSpinner(plotOutput("d_statistics_histogram_plot"))
                      ),
@@ -95,7 +95,7 @@ body <- dashboardBody(
                               uiOutput("d_statistics_variable_selector_heatmap"),
                               uiOutput("d_statistics_variable_selector_heatmap2"),
                               selectInput("d_statistics_heatmap_type", "Plot type", c("combine", "split")),
-                              hidden(h5(id = "d_statistics_heatmap_plot_error", "One of the variables is a factor,
+                              hidden(h5(id = "d_statistics_heatmap_plot_error", "One of the variables is not numerical,
                                         a Heatmap can't be generated")),
                               withSpinner(plotOutput("d_statistics_heatmap_plot"))
                      )
