@@ -1,3 +1,11 @@
+# render lists to select
+output$vcf_selector_var <- renderUI({
+  selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
+})
+output$vcf_selector_cov <- renderUI({
+  selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
+})
+
 observeEvent(input$run_shell, {
   withProgress(message = "Runnink PLINK shell command", {
     plink.arguments <- input$command
@@ -53,13 +61,7 @@ observe({
       # get colnames
       lists$vcf_covars <- ds.colnames(lists$available_tables[type_resource == "table", resource_internal], 
                                       datasources = connection$conns)
-      # render lists to select
-      output$vcf_selector_var <- renderUI({
-        selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
-      })
-      output$vcf_selector_cov <- renderUI({
-        selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
-      })
+      
     }
   }
 })
