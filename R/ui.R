@@ -179,21 +179,19 @@ body <- dashboardBody(
             tabPanel('limma commands',
                      fluidRow(
                        column(6,
-                              uiOutput("limma_variables_selector"),
-                              uiOutput("limma_labels_selector"),
+                              uiOutput("limma_variables_selector_feature"),
+                              uiOutput("limma_variables_selector_covars"),
                               uiOutput("limma_sva_selector"),
+                              uiOutput("limma_run")
+                       ),
+                       column(6,
+                              uiOutput("limma_labels_selector"),
                               selectInput("limma_data_type", "Data type:", c("RNAseq", "microarray"))
                        )
                      ),
                      fluidRow(
                        column(12,
-                              uiOutput("limma_run")
-                       )
-                     ),
-                     
-                     fluidRow(
-                       column(12,
-                              uiOutput("limma_server_select"),
+                              # uiOutput("limma_server_select"),
                               dataTableOutput("limma_results_table")
                      )
                      )
