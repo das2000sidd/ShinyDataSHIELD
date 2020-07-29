@@ -6,7 +6,7 @@ output$descriptive_summary <- renderDT(
     }
     else {
       Quantiles <- ds.quantileMean(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns)
-      data.table(Quantiles = names(Quantiles), Value = Quantiles)
+      data.table(Quantiles = names(Quantiles), Value = round(Quantiles, digits = 4))
     }
   }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c(0))))
 )
@@ -27,59 +27,45 @@ output$available_variables_type2 <- renderDT(
 )
 
 output$glm_results_table <- renderDT(
-  glm_results$glm_result_table$coefficients, options=list(paging = FALSE, searching = FALSE,
-                                                          rowCallback = JS(
-                                                            "function(row, data) {",
-                                                            "for (i = 1; i < data.length; i++) {",
-                                                            "if (data[i]>1 | data[i]<1){",
-                                                            "$('td:eq('+i+')', row).html(data[i].toExponential(1));",
-                                                            "}",
-                                                            "}",
-                                                            "}"))
+  as.data.table(lapply(as.data.table(glm_results$glm_result_table$coefficients), format_num)), 
+  options=list(paging = FALSE, searching = FALSE)
 )
 
 output$glmer_results_table <- renderDT(
-  glm_results$glmer_result_table$SLMA.pooled.ests.matrix, options=list(paging = FALSE, searching = FALSE,
-                                                          rowCallback = JS(
-                                                            "function(row, data) {",
-                                                            "for (i = 1; i < data.length; i++) {",
-                                                            "if (data[i]>1 | data[i]<1){",
-                                                            "$('td:eq('+i+')', row).html(data[i].toExponential(1));",
-                                                            "}",
-                                                            "}",
-                                                            "}"))
+  as.data.table(lapply(as.data.table(glm_results$glmer_result_table$SLMA.pooled.ests.matrix), format_num)), 
+  options=list(paging = FALSE, searching = FALSE)
 )
 
-output$limma_results_table <- renderDT({
-  as.data.table(limma_results$result_table$server1)
-})
+output$limma_results_table <- renderDT(
+  as.data.table(lapply(as.data.table(limma_results$result_table), format_num))
+)
 
 output$plink_results_table <- renderDT({
-  as.data.table(plink_results$result_table$server1$results)
+  as.data.table(lapply(as.data.table(plink_results$result_table$server1$results), format_num))
 })
 
-output$vcf_ct_counts <- renderDT(
-  tryCatch({
-    if(length(ds.asFactor(input.var.name = paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$all.unique.levels) > 6){
-      hideElement("vcf_ct_perc")
-      hideElement("vcf_perc")
-      Quantiles <- ds.summary(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$server1$`quantiles & mean`
-      data.table(Quantiles = names(Quantiles), Value = Quantiles)
-    }
-    else{
-      showElement("vcf_ct_perc")
-      showElement("vcf_perc")
-      taula = ds.table1D(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$counts
-      data.table(Values = rownames(taula), Count = taula)
-    }
-    
-    }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c(0))))
-)
+# output$vcf_ct_counts <- renderDT(
+#   tryCatch({
+#     if(length(ds.asFactor(input.var.name = paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$all.unique.levels) > 6){
+#       hideElement("vcf_ct_perc")
+#       hideElement("vcf_perc")
+#       Quantiles <- ds.summary(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$server1$`quantiles & mean`
+#       data.table(Quantiles = names(Quantiles), Value = Quantiles)
+#     }
+#     else{
+#       showElement("vcf_ct_perc")
+#       showElement("vcf_perc")
+#       taula = ds.table1D(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$counts
+#       data.table(Values = rownames(taula), Count = taula)
+#     }
+#     
+#     }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+# )
 
-output$vcf_ct_perc <- renderDT({
-  tryCatch({ds.table1D(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$percentages}, error = function(w){})
-})
+# output$vcf_ct_perc <- renderDT({
+#   tryCatch({ds.table1D(paste0("covars$", input$vcf_ct_var), datasources = connection$conns)$percentages}, error = function(w){})
+# })
 
 output$vcf_results <- renderDT(
-  as.data.table(vcf_results$result_table_gwas$server1)
+  as.data.table(lapply(as.data.table(vcf_results$result_table_gwas$server1), format_num))
 )
