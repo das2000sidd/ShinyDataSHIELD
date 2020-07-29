@@ -14,6 +14,14 @@ server <- function(input, output, session) {
   source("genomics.R", local = TRUE)
   source("omics.R", local = TRUE)
   
+  format_num <- function(col) {
+    if (is.numeric(col))
+      round(col, digits = 4)# sprintf('%1.2f', col)
+    else
+      col
+  }
+  
+  
   onclick('connection_display',
           connection$active <- FALSE
           )
