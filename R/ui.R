@@ -12,6 +12,14 @@ library(shinyBS)
 library(ggplot2)
 library(shinycssloaders)
 
+jscode <- '
+$(document).keyup(function(event) {
+    if ($("#password").is(":focus") && (event.keyCode == 13)) {
+        $("#connect_server").click();
+    }
+});
+'
+
 ## ui.R ##
 sidebar <- dashboardSidebar(
   sidebarMenu(
@@ -46,6 +54,7 @@ body <- dashboardBody(
                        column(6,
                               h3("Credentials"),
                               textInput("user", "User"),
+                              tags$head(tags$script(HTML(jscode))),
                               passwordInput("password", "Password")
                        )
                      ),
