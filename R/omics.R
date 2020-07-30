@@ -1,5 +1,5 @@
-output$limma_variables_selector_feature <- renderUI({
-  selectInput("limma_var_feature", "Feature for the limma", c("", lists$resource_variables))
+output$limma_variables_selector_condition <- renderUI({
+  selectInput("limma_var_feature", "Condition for the limma", c("", lists$resource_variables))
 })
 output$limma_variables_selector_covars <- renderUI({
   selectInput("limma_var_covars", "Covariables for the limma", 

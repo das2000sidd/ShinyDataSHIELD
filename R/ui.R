@@ -49,13 +49,13 @@ body <- dashboardBody(
                        column(6,
                               #textInput("server", "Server"),
                               h3("URL"),
-                              textInput("url", "Opal server", value = "https://opal-demo.obiba.org/")
+                              textInput("url", "Opal server")
                        ),
                        column(6,
                               h3("Credentials"),
-                              textInput("user", "User", value = "administrator"),
+                              textInput("user", "User"),
                               tags$head(tags$script(HTML(jscode))),
-                              passwordInput("password", "Password", value = "password")
+                              passwordInput("password", "Password")
                        )
                      ),
                      hr(),
@@ -92,14 +92,16 @@ body <- dashboardBody(
                               selectInput("d_statistics_scatter_type", "Plot type", c("combine", "split")),
                               hidden(h5(id = "d_statistics_scatter_plot_error", "One of the variables not numerical,
                                         a Scatter plot can't be generated")),
-                              withSpinner(plotOutput("d_statistics_scatter_plot"))
+                              withSpinner(plotOutput("d_statistics_scatter_plot")),
+                              downloadButton("d_statistics_scatter_plot_download", "Download plot")
                      ),
                      tabPanel("Histogram",
                               uiOutput("d_statistics_variable_selector_histogram"),
                               selectInput("d_statistics_histogram_type", "Plot type", c("combine", "split")),
                               hidden(h5(id = "d_statistics_histogram_plot_error", "The variables is not numerical,
                                         a Histogram can't be generated")),
-                              withSpinner(plotOutput("d_statistics_histogram_plot"))
+                              withSpinner(plotOutput("d_statistics_histogram_plot")),
+                              downloadButton("d_statistics_histogram_plot_download", "Download plot")
                      ),
                      tabPanel("Heatmap",
                               uiOutput("d_statistics_variable_selector_heatmap"),
@@ -107,7 +109,8 @@ body <- dashboardBody(
                               selectInput("d_statistics_heatmap_type", "Plot type", c("combine", "split")),
                               hidden(h5(id = "d_statistics_heatmap_plot_error", "One of the variables is not numerical,
                                         a Heatmap can't be generated")),
-                              withSpinner(plotOutput("d_statistics_heatmap_plot"))
+                              withSpinner(plotOutput("d_statistics_heatmap_plot")),
+                              downloadButton("d_statistics_heatmap_plot_download", "Download plot")
                      )
               )
             )
@@ -169,7 +172,8 @@ body <- dashboardBody(
                               )
                      ),
                      tabPanel("Manhattan Plot",
-                              withSpinner(plotOutput("manhattan2"))
+                              withSpinner(plotOutput("manhattan2")),
+                              downloadButton("genomics_manhattan_plink_plot_download", "Download plot")
                      )
               )
             )
@@ -185,7 +189,8 @@ body <- dashboardBody(
                   hidden(downloadButton("vcf_results_table_download", "Download GWAS results"))
                 ),
                 tabPanel("Manhattan Plot",
-                  withSpinner(plotOutput("manhattan"))
+                  withSpinner(plotOutput("manhattan")),
+                  downloadButton("genomics_manhattan_vcf_plot_download", "Download plot")
                 )
               )
             )
@@ -194,7 +199,7 @@ body <- dashboardBody(
             tabPanel('limma commands',
                      fluidRow(
                        column(6,
-                              uiOutput("limma_variables_selector_feature"),
+                              uiOutput("limma_variables_selector_condition"),
                               uiOutput("limma_variables_selector_covars"),
                               uiOutput("limma_sva_selector"),
                               uiOutput("limma_run")
@@ -206,7 +211,6 @@ body <- dashboardBody(
                      ),
                      fluidRow(
                        column(12,
-                              # uiOutput("limma_server_select"),
                               dataTableOutput("limma_results_table"),
                               hidden(downloadButton("limma_results_table_download", "Download LIMMA results"))
                      )

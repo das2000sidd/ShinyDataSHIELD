@@ -7,6 +7,7 @@ server <- function(input, output, session) {
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
+  plots <- reactiveValues(ds_scatter_plot = NULL)
 
   source("connection.R", local = TRUE)
   source("descriptive_stats.R", local = TRUE)
