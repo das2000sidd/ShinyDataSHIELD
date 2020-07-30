@@ -1,5 +1,5 @@
 output$limma_variables_selector_feature <- renderUI({
-  selectInput("limma_var_feature", "Feature for the limma", lists$resource_variables)
+  selectInput("limma_var_feature", "Feature for the limma", c("", lists$resource_variables))
 })
 output$limma_variables_selector_covars <- renderUI({
   selectInput("limma_var_covars", "Covariables for the limma", 
@@ -26,9 +26,12 @@ observeEvent(input$run_limma, {
                                              sva = input$limma_sva,
                                              annotCols = input$limma_lab,
                                              type.data = input$limma_data_type)
+      # browser()
       incProgress(0.8)
+      showElement("limma_results_table_download")
     }, error = function(w){
       shinyalert("Oops!", "Error when performing the limma", type = "error")
+      hideElement("limma_results_table_download")
     })
     
   })

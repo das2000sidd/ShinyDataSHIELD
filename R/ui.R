@@ -49,13 +49,13 @@ body <- dashboardBody(
                        column(6,
                               #textInput("server", "Server"),
                               h3("URL"),
-                              textInput("url", "Opal server")
+                              textInput("url", "Opal server", value = "https://opal-demo.obiba.org/")
                        ),
                        column(6,
                               h3("Credentials"),
-                              textInput("user", "User"),
+                              textInput("user", "User", value = "administrator"),
                               tags$head(tags$script(HTML(jscode))),
-                              passwordInput("password", "Password")
+                              passwordInput("password", "Password", value = "password")
                        )
                      ),
                      hr(),
@@ -83,7 +83,8 @@ body <- dashboardBody(
               tabBox(width = 12,
                      tabPanel("Summary",
                               uiOutput("d_statistics_variable_selector"),
-                              dataTableOutput("descriptive_summary")
+                              dataTableOutput("descriptive_summary"),
+                              downloadButton("descriptive_summary_download", "Download")
                      ),
                      tabPanel("Scatter plot",
                               uiOutput("d_statistics_variable_selector_scatter"),
@@ -125,7 +126,9 @@ body <- dashboardBody(
                        )
                      ),
                      dataTableOutput("available_variables_type"),
-                     dataTableOutput("glm_results_table")
+                     dataTableOutput("glm_results_table"),
+                     hidden(downloadButton("glm_results_table_download", "Download GLM results"))
+                     
             )
     ),
     tabItem(tabName = "statistic_models_mixed",
@@ -142,7 +145,8 @@ body <- dashboardBody(
                        )
                      ),
                      dataTableOutput("available_variables_type2"),
-                     dataTableOutput("glmer_results_table")
+                     dataTableOutput("glmer_results_table"),
+                     hidden(downloadButton("glmer_results_table_download", "Download GLMer results"))
             )
     ),
     tabItem(tabName = "plink",
@@ -159,6 +163,7 @@ body <- dashboardBody(
                               actionButton("run_shell", "Run Shell command"),
                               hidden(actionButton("plink_show_plain", "Show PLINK terminal output")),
                               dataTableOutput("plink_results_table"),
+                              hidden(downloadButton("plink_results_table_download", "Download PLINK results")),
                               bsModal("plink_results_terminal", "PLINK Terminal output", "plink_show_plain",
                                       verbatimTextOutput("plink_results_terminal_render")
                               )
@@ -176,7 +181,8 @@ body <- dashboardBody(
                   uiOutput("vcf_selector_var"),
                   uiOutput("vcf_selector_cov"),
                   actionButton("gwas_trigger", "Perform GWAS"),
-                  dataTableOutput("vcf_results")
+                  dataTableOutput("vcf_results"),
+                  hidden(downloadButton("vcf_results_table_download", "Download GWAS results"))
                 ),
                 tabPanel("Manhattan Plot",
                   withSpinner(plotOutput("manhattan"))
@@ -201,7 +207,8 @@ body <- dashboardBody(
                      fluidRow(
                        column(12,
                               # uiOutput("limma_server_select"),
-                              dataTableOutput("limma_results_table")
+                              dataTableOutput("limma_results_table"),
+                              hidden(downloadButton("limma_results_table_download", "Download LIMMA results"))
                      )
                      )
             )

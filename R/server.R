@@ -13,6 +13,7 @@ server <- function(input, output, session) {
   source("statistics_models.R", local = TRUE)
   source("genomics.R", local = TRUE)
   source("omics.R", local = TRUE)
+  source("download_handlers.R", local = TRUE)
   
   format_num <- function(col) {
     if (is.numeric(col))

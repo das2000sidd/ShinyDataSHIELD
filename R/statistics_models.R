@@ -8,8 +8,10 @@ observeEvent(input$perform_glm, {
       glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "table1", family = input$gml_output_family,
                                              datasources = connection$conns)
     })
+    showElement("glm_results_table_download")
   }, error = function(w){
     shinyalert("Oops!", "Error performing the GLM", type = "error")
+    hideElement("glm_results_table_download")
   })
   
 })
@@ -31,9 +33,11 @@ observeEvent(input$perform_glmer, {
     withProgress(message = "Performing GLMer", value = 0.5, {
       glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "table1", family = input$gmler_output_family,
                                                      datasources = connection$conns)
-    }) 
+    })
+    showElement("glmer_results_table_download")
   }, error = function(w){
     shinyalert("Oops!", "Error performing the GLMer", type = "error")
+    hideElement("glmer_results_table_download")
   })
   
 })

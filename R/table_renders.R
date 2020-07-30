@@ -28,21 +28,27 @@ output$available_variables_type2 <- renderDT(
 
 output$glm_results_table <- renderDT(
   as.data.table(lapply(as.data.table(glm_results$glm_result_table$coefficients), format_num)), 
-  options=list(paging = FALSE, searching = FALSE)
+  options=list(paging = FALSE, searching = FALSE, columnDefs = list(list(visible=FALSE, targets=c(0))))
 )
 
 output$glmer_results_table <- renderDT(
   as.data.table(lapply(as.data.table(glm_results$glmer_result_table$SLMA.pooled.ests.matrix), format_num)), 
-  options=list(paging = FALSE, searching = FALSE)
+  options=list(paging = FALSE, searching = FALSE, columnDefs = list(list(visible=FALSE, targets=c(0))))
 )
 
-output$limma_results_table <- renderDT(
-  as.data.table(lapply(as.data.table(limma_results$result_table), format_num))
+output$limma_results_table <- renderDT({
+  exp <- paste0("res <- rbind(", paste0("as.data.table(limma_results$result_table$", unique(lists$available_tables$server), ")", 
+                                 collapse = ","), ")")
+  eval(str2expression(exp))
+  as.data.table(lapply(as.data.table(res), format_num))
+},
+  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
 )
 
-output$plink_results_table <- renderDT({
-  as.data.table(lapply(as.data.table(plink_results$result_table$server1$results), format_num))
-})
+output$plink_results_table <- renderDT(
+  as.data.table(lapply(as.data.table(plink_results$result_table$server1$results), format_num)),
+  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+)
 
 # output$vcf_ct_counts <- renderDT(
 #   tryCatch({
@@ -67,5 +73,6 @@ output$plink_results_table <- renderDT({
 # })
 
 output$vcf_results <- renderDT(
-  as.data.table(lapply(as.data.table(vcf_results$result_table_gwas$server1), format_num))
+  as.data.table(lapply(as.data.table(vcf_results$result_table_gwas$server1), format_num)),
+  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
 )

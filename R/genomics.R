@@ -13,8 +13,11 @@ observeEvent(input$run_shell, {
     tryCatch({
       plink_results$result_table <- ds.PLINK("resource1", plink.arguments, datasources = connection$conns)
       showElement("plink_show_plain")
+      showElement("plink_results_table_download")
     }, error = function(w){
       shinyalert("Oops!", "PLINK command yielded errors", type = "error")
+      hideElement("plink_show_plain")
+      hideElement("plink_results_table_download")
     })
   })
 })
@@ -36,7 +39,14 @@ observeEvent(input$gwas_trigger, {
   if(resources_match){
     withProgress(message = "Performing GWAS", {
       model <- paste0(input$vcf_var, "~", if(is.null(input$vcf_cov)){1} else{paste0(input$vcf_cov, collapse = "+")})
-      vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
+      tryCatch({
+        vcf_results$result_table_gwas <- ds.GWAS(genoData = 'gds.Data', model = as.formula(model), datasources = connection$conns)
+        showElement("vcf_results_table_download")
+      }, error = function(w){
+        shinyalert("Oops!", "Error when performing GWAS", type = "error")
+        hideElement("vcf_results_table_download")
+      })
+      
     })
   }
 })
