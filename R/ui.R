@@ -25,16 +25,16 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     id = "tabs",
     uiOutput("userpanel"),
-    menuItem("Connect to server", tabName = "server_connect", icon = icon("dashboard")),
-    menuItem("Descriptive statistics", tabName = "d_statistics", icon = icon("dashboard")),
-    menuItem("Statistic models", tabName = "statistic_models", icon = icon("dashboard")),
-    menuItem("Mixed statistic models", tabName = "statistic_models_mixed", icon = icon("dashboard")),
-    menuItem("Genomics", tabName = "genomics", icon = icon("dashboard"),
-             menuSubItem("Analysis with BioConductor", tabName = "vcf_files",icon = icon("dashboard")),
-             menuSubItem("Analysis with PLINK", tabName = "plink",icon = icon("dashboard"))
+    menuItem("Connect to server", tabName = "server_connect"),
+    menuItem("Descriptive statistics", tabName = "d_statistics"),
+    menuItem("Statistic models", tabName = "statistic_models"),
+    menuItem("Mixed statistic models", tabName = "statistic_models_mixed"),
+    menuItem("Genomics", tabName = "genomics",
+             menuSubItem("Analysis with BioConductor", tabName = "vcf_files"),
+             menuSubItem("Analysis with PLINK", tabName = "plink")
              ),
-    menuItem("Omics", tabName = "omics", icon = icon("dashboard"),
-             menuSubItem("LIMMA", tabName = "limma", icon = icon("dashboard"))
+    menuItem("Omics", tabName = "omics",
+             menuSubItem("LIMMA", tabName = "limma")
              )
   )
 )
@@ -49,13 +49,13 @@ body <- dashboardBody(
                        column(6,
                               #textInput("server", "Server"),
                               h3("URL"),
-                              textInput("url", "Opal server")
+                              textInput("url", "Opal server", value = "https://opal-demo.obiba.org/")
                        ),
                        column(6,
                               h3("Credentials"),
-                              textInput("user", "User"),
+                              textInput("user", "User", value = "administrator"),
                               tags$head(tags$script(HTML(jscode))),
-                              passwordInput("password", "Password")
+                              passwordInput("password", "Password", value = "password")
                        )
                      ),
                      hr(),

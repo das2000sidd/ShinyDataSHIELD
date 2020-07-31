@@ -54,13 +54,13 @@ observeEvent(input$trigger_formula_help_glmer, {
 observe({
   if(input$tabs == "statistic_models"){
     if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-    else if (!any(unique(lists$available_tables$type_resource) == c("table", "r_obj_eset", "r_obj_rse"))) {
+    else if (!any(unique(lists$available_tables$type_resource) == c("table"))) {#, "r_obj_eset", "r_obj_rse"))) {
       shinyalert("Oops!", "Statistic models only available for tables", type = "error")
     }
   }
   if(input$tabs == "statistic_models_mixed"){
     if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-    else if (!any(unique(lists$available_tables$type_resource) == c("table", "r_obj_eset", "r_obj_rse"))) {
+    else if (!any(unique(lists$available_tables$type_resource) == c("table"))) {#, "r_obj_eset", "r_obj_rse"))) {
       shinyalert("Oops!", "Mixed statistic models only available for tables", type = "error")
     }
   }

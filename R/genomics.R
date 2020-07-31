@@ -1,10 +1,4 @@
-# render lists to select
-output$vcf_selector_var <- renderUI({
-  selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
-})
-output$vcf_selector_cov <- renderUI({
-  selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
-})
+# PLINK
 
 observeEvent(input$run_shell, {
   withProgress(message = "Runnink PLINK shell command", {
@@ -26,10 +20,19 @@ output$plink_results_terminal_render <- renderText({
   paste0(plink_results$result_table$server1$plink.out$output, collapse = " \n ")
 })
 
+# BIOCONDUCTOR
+
+output$vcf_selector_var <- renderUI({
+  selectInput("vcf_var", "Variable", lists$vcf_covars$server1)
+})
+output$vcf_selector_cov <- renderUI({
+  selectInput("vcf_cov", "Covariable", lists$vcf_covars$server1[!(lists$vcf_covars$server1 %in% input$vcf_var)], multiple = TRUE)
+})
+
 observeEvent(input$gwas_trigger, {
   resources_match <- TRUE
   tryCatch({
-    ds.GenotypeData(x=lists$available_tables[type_resource == "r_obj_vcf", resource_internal], 
+      ds.GenotypeData(x=lists$available_tables[type_resource == "r_obj_vcf", resource_internal], 
                     covars = lists$available_tables[type_resource == "table", resource_internal], 
                     columnId = 1, newobj.name = 'gds.Data', datasources = connection$conns)
   }, error = function(w){

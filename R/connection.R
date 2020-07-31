@@ -102,7 +102,7 @@ observeEvent(input$connect_selected, {
           }
           # "SshResourceClient" correspond to ssh resources, don't need to coerce them
           else if ("SshResourceClient" %in% resource_type){
-            break
+            # break
             lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "ssh"]
           }
           # Otherwise coerce to R object
