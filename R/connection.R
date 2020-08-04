@@ -1,7 +1,19 @@
 observeEvent(input$connect_server, {
   tryCatch({
-    connection$opal_conection <- opal.login(username = input$user, password = input$password, url = input$url)
-    lists$projects <- opal.projects(connection$opal_conection)$name
+    builder <- newDSLoginBuilder()
+    builder$append(server = "server1", url = input$url,
+                   user = input$user, password = input$password,
+                   driver = "OpalDriver")
+    logindata <- builder$build()
+    conns <- datashield.login(logins = logindata)
+    tables <- data.table(str_split(dsListTables(conns$server1), "[.]", simplify = TRUE, 2), "table")
+    resources <- data.table(str_split(dsListResources(conns$server1), "[.]", simplify = TRUE, 2), "resource")
+    lists$tab_res <- rbind(tables, resources)
+    colnames(lists$tab_res) <- c("project", "res", "type")
+    lists$projects <- unique(lists$tab_res$project)
+    
+    datashield.logout(conns)
+
     output$project_selector <- renderUI({
       selectInput("project_selected", "Project", lists$projects)
     })
@@ -9,29 +21,28 @@ observeEvent(input$connect_server, {
     toggleElement("remove_server")
     toggleElement("connect_server")
     toggleElement("connect_selected")
-    connection$complete <- TRUE
   },
   error = function(w){
+    datashield.logout(conns)
     shinyalert("Oops!", "Not able to connect", type = "error")
   })
 })
 
 observeEvent(input$project_selected, {
-  lists$resources <- tryCatch({
-    connection$isTable <- FALSE
-    opal.resources(connection$opal_conection, input$project_selected)$name
-  }, error = function(w){NULL})
-  if (is.null(lists$resources)) {
-    lists$resources <- opal.tables(connection$opal_conection, input$project_selected)$name
-    connection$isTable <- TRUE
-  }
+  lists$resources <- lists$tab_res[project == input$project_selected]$res
+    
   output$resource_selector <- renderUI({
     selectInput("resource_selected", "Resource", lists$resources, multiple = TRUE)
   })
-  connection$complete <- TRUE
 })
 
 observeEvent(input$add_server, {
+  if(lists$tab_res[project == input$project_selected & res == input$resource_selected[1]]$type == "table"){
+    connection$isTable <- TRUE
+  }
+  else {
+    connection$isTable <- FALSE
+  }
   connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("server", connection$num_servers + 1), project = input$project_selected, resources = paste(input$resource_selected, collapse = ", "), table = connection$isTable))
   connection$num_servers <- connection$num_servers + 1
 })
@@ -143,7 +154,7 @@ observeEvent(input$connect_selected, {
       connection$active <- TRUE
     }, error = function(w){
       datashield.logout(connection$conns)
-      opal.logout(connection$opal_conection)
+      # opal.logout(connection$opal_conection)
       shinyalert("Oops!", "Broken resource", type = "error")
     })
   })

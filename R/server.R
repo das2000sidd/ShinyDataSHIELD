@@ -1,6 +1,6 @@
 server <- function(input, output, session) {
-  connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, complete = FALSE, opal_conection = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
-  lists <- reactiveValues(resource_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
+  connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
+  lists <- reactiveValues(tab_res = NULL, resource_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
   glm_results <- reactiveValues(glm_result_table = NULL, glmer_result_table = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
