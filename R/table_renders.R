@@ -27,8 +27,8 @@ output$available_variables_type2 <- renderDT(
 )
 
 output$glm_results_table <- renderDT(
-  as.data.table(lapply(as.data.table(glm_results$glm_result_table$coefficients), format_num)), 
-  options=list(paging = FALSE, searching = FALSE, columnDefs = list(list(visible=FALSE, targets=c(0))))
+  tryCatch({round(glm_results$glm_result_table$coefficients, digits = 4)}, error = function(w){NULL}), 
+  options=list(paging = FALSE, searching = FALSE)
 )
 
 output$glmer_results_table <- renderDT({

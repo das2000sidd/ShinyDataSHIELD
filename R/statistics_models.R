@@ -35,7 +35,9 @@ observeEvent(input$perform_glmer, {
                                                      datasources = connection$conns)
     })
     showElement("glmer_results_table_download")
-    showElement("glmer_table_server")
+    if(length(lists$available_tables$server) > 1) {
+      showElement("glmer_table_server")
+    }
   }, error = function(w){
     shinyalert("Oops!", "Error performing the GLMer", type = "error")
     hideElement("glmer_results_table_download")
