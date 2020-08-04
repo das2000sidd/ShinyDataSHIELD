@@ -31,9 +31,12 @@ output$glm_results_table <- renderDT(
   options=list(paging = FALSE, searching = FALSE, columnDefs = list(list(visible=FALSE, targets=c(0))))
 )
 
-output$glmer_results_table <- renderDT(
-  as.data.table(lapply(as.data.table(glm_results$glmer_result_table$SLMA.pooled.ests.matrix), format_num)), 
-  options=list(paging = FALSE, searching = FALSE, columnDefs = list(list(visible=FALSE, targets=c(0))))
+output$glmer_results_table <- renderDT({
+  glmer_table <- eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_table_server, "$coefficients")))
+  tryCatch({round(glmer_table, digits = 4)}, error = function(w){NULL})
+}
+  , 
+  options=list(paging = FALSE, searching = FALSE)
 )
 
 output$limma_results_table <- renderDT({

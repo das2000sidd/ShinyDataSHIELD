@@ -35,11 +35,17 @@ observeEvent(input$perform_glmer, {
                                                      datasources = connection$conns)
     })
     showElement("glmer_results_table_download")
+    showElement("glmer_table_server")
   }, error = function(w){
     shinyalert("Oops!", "Error performing the GLMer", type = "error")
     hideElement("glmer_results_table_download")
+    hideElement("glmer_table_server")
   })
   
+})
+
+output$glmer_server_select <- renderUI({
+  hidden(selectInput("glmer_table_server", "Select study server", str_replace(lists$available_tables$server, "server", "study")))
 })
 
 observeEvent(input$trigger_formula_help_glmer, {

@@ -148,6 +148,7 @@ body <- dashboardBody(
                        )
                      ),
                      dataTableOutput("available_variables_type2"),
+                     uiOutput("glmer_server_select"),
                      dataTableOutput("glmer_results_table"),
                      hidden(downloadButton("glmer_results_table_download", "Download GLMer results"))
             )
