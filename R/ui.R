@@ -9,8 +9,9 @@ library(DT)
 library(data.table)
 library(shinyjs)
 library(shinyBS)
-library(ggplot2)
+# library(ggplot2)
 library(shinycssloaders)
+library(stringr)
 
 jscode <- '
 $(document).keyup(function(event) {
