@@ -6,8 +6,10 @@ observeEvent(input$connect_server, {
                    driver = "OpalDriver")
     logindata <- builder$build()
     conns <- datashield.login(logins = logindata)
-    tables <- data.table(str_split(dsListTables(conns$server1), "[.]", simplify = TRUE, 2), "table")
-    resources <- data.table(str_split(dsListResources(conns$server1), "[.]", simplify = TRUE, 2), "resource")
+    tables <- tryCatch(data.table(str_split(dsListTables(conns$server1), "[.]", simplify = TRUE, 2), "table"),
+                       error = function(w) { data.table() })
+    resources <- tryCatch(data.table(str_split(dsListResources(conns$server1), "[.]", simplify = TRUE, 2), "resource"),
+                          error = function(w) { data.table() })
     lists$tab_res <- rbind(tables, resources)
     colnames(lists$tab_res) <- c("project", "res", "type")
     lists$projects <- unique(lists$tab_res$project)
