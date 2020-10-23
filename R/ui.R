@@ -75,7 +75,7 @@ body <- dashboardBody(
     tabItem(tabName = "server_connect",
             tabPanel('server_connect',
                      fluidRow(
-                       actionButton("stop", "stop"),
+                       # actionButton("stop", "stop"),
                        tabBox(
                          title = p(circleButton("add", size = "sm", icon = icon("plus"), status = "primary"),
                                    circleButton("remove", size = "sm", icon = icon("minus"), status = "primary")
