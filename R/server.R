@@ -1,12 +1,15 @@
 server <- function(input, output, session) {
-  connection <- reactiveValues(num_servers = 0, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
-  lists <- reactiveValues(tab_res = NULL, resource_variables = NULL, limma_labels = NULL, projects = NULL, resources = NULL, vcf_covars = NULL, table_columns = NULL, available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
+  connection <- reactiveValues(creds = NULL, builder = NULL, logindat = NULL, conns = NULL, active = FALSE, server_resource = list(), server_resources = NULL, isTable = NULL)
+  lists <- reactiveValues(tab = NULL, res = NULL, resource_variables = list(), limma_labels = list(), projects_tab = NULL, projects_res = NULL, resources = NULL, vcf_covars = list(), table_columns = list(), available_tables = NULL, available_resources = NULL, table_columns_types = NULL)
   glm_results <- reactiveValues(glm_result_table = NULL, glmer_result_table = NULL)
   limma_results <- reactiveValues(result_table = NULL)
   plink_results <- reactiveValues(result_table = NULL)
   vcf_results <- reactiveValues(result_table_gwas = NULL)
   plots <- reactiveValues(ds_scatter_plot = NULL)
-
+  tabIndex <- reactiveVal(1)
+  tables_resources <- reactiveValues()
+  max_servers <- 10 # Change this to allow more servers, couldnt manage to create the observeEvents dynamically :(
+  
   source("table_renders.R", local = TRUE)
   source("plot_renders.R", local = TRUE)
   source("connection.R", local = TRUE)
@@ -16,13 +19,25 @@ server <- function(input, output, session) {
   source("omics.R", local = TRUE)
   source("download_handlers.R", local = TRUE)
   
+  js$disableTab("summary")
+  js$disableTab("s_plot")
+  js$disableTab("h_plot")
+  js$disableTab("hm_plot")
+  js$disableTab("glm")
+  js$disableTab("mixed_model")
+  js$disableTab("plink")
+  js$disableTab("plink_plot")
+  js$disableTab("gwas")
+  js$disableTab("gwas_plot")
+  js$disableTab("limma")
+  
+  
   format_num <- function(col) {
     if (is.numeric(col))
       round(col, digits = 4)# sprintf('%1.2f', col)
     else
       col
   }
-  
   
   onclick('connection_display',
           connection$active <- FALSE

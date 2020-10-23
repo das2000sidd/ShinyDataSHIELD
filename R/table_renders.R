@@ -1,18 +1,67 @@
+output$available_tables_render <- renderDT(
+  lists$available_tables[type_resource == "table"], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
+                                                                 paging = FALSE, searching = FALSE)
+)
+
+output$available_tables_sm_render <- renderDT(
+  lists$available_tables[type_resource == "table"], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
+                                                                 paging = FALSE, searching = FALSE)
+)
+
+output$available_tables_ssh_render <- renderDT(
+  lists$available_tables[type_resource == "ssh"], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
+                                                                 paging = FALSE, searching = FALSE),
+  selection = "single"
+)
+
+output$available_tables_vcf_render <- renderDT(
+  lists$available_tables[type_resource %in% c("table", "r_obj_vcf")], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
+                                                                 paging = FALSE, searching = FALSE)
+)
+
+output$available_tables_lim_render <- renderDT(
+  lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
+                                                                 paging = FALSE, searching = FALSE)
+)
+
 output$descriptive_summary <- renderDT(
   tryCatch({
-    if(ds.class(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns) == "factor") {
-      taula <- ds.table1D(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns)$counts
-      data.table(Values = rownames(taula), Count = taula[,1])
+    if(is.null(input$d_statistics_variable_selector_value_approach)){type <- "combine"} else{
+      type <- input$d_statistics_variable_selector_value_approach
+    }
+    
+    if(ds.class(paste0("tables_descriptive$", input$d_statistics_variable_selector_value), datasources = connection$conns[
+      as.numeric(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1], 2])
+    ]) == "factor") {
+      taula <- ds.table1D(paste0("tables_descriptive$", input$d_statistics_variable_selector_value), datasources = connection$conns[
+        as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected, 2]))
+      ], type = type)$counts
+      if(type == "combine"){
+        table <- taula
+        colnames(table) <- "Counts"
+      }
+      else{
+        table <- data.frame(matrix(unlist(taula), nrow=length(taula), byrow=T))
+        rownames(table) <- names(taula)
+        colnames(table) <- rownames(taula[[1]])
+      }
+      table
     }
     else {
-      Quantiles <- ds.quantileMean(paste0("table1$", input$d_statistics_variable_selector_value), datasources = connection$conns)
-      data.table(Quantiles = names(Quantiles), Value = round(Quantiles, digits = 4))
+      Quantiles <- ds.quantileMean(paste0("tables_descriptive$", input$d_statistics_variable_selector_value), datasources = connection$conns[
+        as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected, 2]))
+      ], type = type)
+      table <- data.frame(matrix(unlist(Quantiles), nrow=length(Quantiles), byrow=T))
+      rownames(table) <- names(Quantiles)
+      colnames(table) <- names(Quantiles[[1]])
+      # as.data.table(lapply(as.data.table(table), format_num))
+      round(table, digits = 4)
     }
-  }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+  }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c())))
 )
 
 output$server_resources_table <- renderDT(
-  connection$server_resources, options=list(columnDefs = list(list(visible=FALSE, targets=c(0, 1, 4))),
+  connection$server_resources, options=list(columnDefs = list(list(visible=FALSE, targets=c(0))),
                                             paging = FALSE, searching = FALSE)
 )
 
@@ -32,7 +81,11 @@ output$glm_results_table <- renderDT(
 )
 
 output$glmer_results_table <- renderDT({
-  glmer_table <- eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_table_server, "$coefficients")))
+  if(is.list(glm_results$glmer_result_table$output.summary[[input$glmer_results_select_value]])){
+    glmer_table <- eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_results_select_value, "$coefficients")))
+  }
+  else{glmer_table <- try(eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_results_select_value))))}
+  
   tryCatch({round(glmer_table, digits = 4)}, error = function(w){NULL})
 }
   , 
@@ -49,7 +102,7 @@ output$limma_results_table <- renderDT({
 )
 
 output$plink_results_table <- renderDT(
-  as.data.table(lapply(as.data.table(plink_results$result_table$server1$results), format_num)),
+  as.data.table(lapply(as.data.table(plink_results$result_table[[1]]$results), format_num)),
   options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
 )
 
@@ -76,6 +129,7 @@ output$plink_results_table <- renderDT(
 # })
 
 output$vcf_results <- renderDT(
-  as.data.table(lapply(as.data.table(vcf_results$result_table_gwas$server1), format_num)),
+  tryCatch({as.data.table(lapply(as.data.table(do.call("rbind", vcf_results$result_table_gwas)), format_num))}, 
+           error = function(w){NULL}),
   options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
 )

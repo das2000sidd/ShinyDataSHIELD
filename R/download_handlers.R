@@ -27,7 +27,9 @@ output$glm_results_table_download <- downloadHandler(
 output$glmer_results_table_download <- downloadHandler(
   filename = "glmer_results_table.csv",
   content = function(file) {
-    write.csv(eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_table_server, "$coefficients"))), 
+    write.csv(if(is.list(glm_results$glmer_result_table$output.summary[[input$glmer_results_select_value]])){
+      eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_results_select_value, "$coefficients")))
+    }else{try(eval(str2expression(paste0("glm_results$glmer_result_table$output.summary$", input$glmer_results_select_value))))}, 
               file)
   }
 )
@@ -35,7 +37,7 @@ output$glmer_results_table_download <- downloadHandler(
 output$plink_results_table_download <- downloadHandler(
   filename = "plink_results_table.csv",
   content = function(file) {
-    write.csv(plink_results$result_table$server1$results, 
+    write.csv(plink_results$result_table[[1]]$results, 
               file, row.names = FALSE)
   }
 )
@@ -43,7 +45,7 @@ output$plink_results_table_download <- downloadHandler(
 output$vcf_results_table_download <- downloadHandler(
   filename = "vcf_results_table.csv",
   content = function(file) {
-    write.csv(vcf_results$result_table_gwas$server1, 
+    write.csv(do.call("rbind", vcf_results$result_table_gwas), 
               file, row.names = FALSE)
   }
 )

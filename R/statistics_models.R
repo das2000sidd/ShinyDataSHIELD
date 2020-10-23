@@ -1,12 +1,45 @@
+observeEvent(input$select_tables_sm, {
+  if(length(input$available_tables_sm_render_rows_selected) > 0){
+    same_cols <- TRUE
+    if(length(input$available_tables_sm_render_rows_selected) > 1){
+      same_cols <- all(lapply(input$available_tables_sm_render_rows_selected, function(i){
+        res<-all(match(lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][i,1])]], 
+                       lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected[1],1])]]))
+        if(is.na(res)){FALSE} else{res}
+      }))}
+    if(!same_cols){
+      shinyalert(shinyalert("Oops!", "Selected tables do not share the same columns, can't pool unequal tables.", type = "error"))
+    }
+    else{
+      datashield.rm(connection$conns, "tables_sm")
+      for(i in input$available_tables_sm_render_rows_selected){
+        lists$available_tables[type_resource == "table"][i,2]
+        
+        datashield.assign.expr(connection$conns[as.numeric(lists$available_tables[type_resource == "table"][i,2])],
+                               "tables_sm", as.symbol(
+                                 as.character(lists$available_tables[type_resource == "table"][i,1])
+                               ))
+      }
+    }
+    js$enableTab("glm")
+    js$enableTab("mixed_model")
+    updateTabsetPanel(session, "statistic_models_t",
+                      selected = "glm")
+  }
+})
+
 observeEvent(input$gml_toggle_variables_table, {
   toggleElement("available_variables_type")
 })
 
 observeEvent(input$perform_glm, {
+  browser()
   tryCatch({
     withProgress(message = "Performing GLM", value = 0.5, {
-      glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "table1", family = input$gml_output_family,
-                                             datasources = connection$conns)
+      glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "tables_sm", family = input$gml_output_family,
+                                             datasources = connection$conns[
+                                               as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected, 2]))
+                                             ])
     })
     showElement("glm_results_table_download")
   }, error = function(w){
@@ -31,8 +64,13 @@ observeEvent(input$gmler_toggle_variables_table, {
 observeEvent(input$perform_glmer, {
   tryCatch({
     withProgress(message = "Performing GLMer", value = 0.5, {
-      glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "table1", family = input$gmler_output_family,
-                                                     datasources = connection$conns)
+      glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "tables_sm", family = input$gmler_output_family,
+                                                     datasources = connection$conns[
+                                                       as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected, 2]))
+                                                     ])
+    })
+    output$glmer_results_select <- renderUI({
+      selectInput("glmer_results_select_value", "Select results to display", names(glm_results$glmer_result_table$output.summary))
     })
     showElement("glmer_results_table_download")
     if(length(lists$available_tables$server) > 1) {
@@ -60,16 +98,16 @@ observeEvent(input$trigger_formula_help_glmer, {
 })
 
 observe({
-  if(input$tabs == "statistic_models"){
-    if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-    else if (!any(unique(lists$available_tables$type_resource) == c("table"))) {#, "r_obj_eset", "r_obj_rse"))) {
-      shinyalert("Oops!", "Statistic models only available for tables", type = "error")
+  if(input$tabs == "statistic_models") {
+    # Get column names from available tables
+    tables_available <- lists$available_tables[type_resource == "table"]
+    if(length(lists$tables_columns) == 0){
+      for(i in 1:nrow(tables_available)){
+        lists$table_columns[[as.character(tables_available[i,1])]] <- ds.colnames(as.character(tables_available[i,1]), datasources = connection$conns[as.numeric(tables_available[i,2])])[[1]]
+      }
     }
-  }
-  if(input$tabs == "statistic_models_mixed"){
-    if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-    else if (!any(unique(lists$available_tables$type_resource) == c("table"))) {#, "r_obj_eset", "r_obj_rse"))) {
-      shinyalert("Oops!", "Mixed statistic models only available for tables", type = "error")
-    }
+    output$available_tables_sm <- renderUI({
+      dataTableOutput("available_tables_sm_render")
+    })
   }
 })
