@@ -3,5 +3,5 @@
 
 app <- function() {
   library(shiny)
-  runApp('inst/shinyApp')
+  runApp(system.file('shinyApp', package = "ShinyDataSHIELD"))
 }

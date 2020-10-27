@@ -1,3 +1,4 @@
+install.packages('devtools')
 devtools::install_version('shiny', version = '1.5.0', repos = 'http://cran.us.r-project.org')
 devtools::install_version('shinyBS', version = '0.61', repos = 'http://cran.us.r-project.org')
 devtools::install_version('shinyjs', version = '2.0.0', repos = 'http://cran.us.r-project.org')
