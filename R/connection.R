@@ -81,13 +81,26 @@ lapply(1:max_servers, function(x){
     logindata <- builder$build()
     conns <- datashield.login(logins = logindata)
     
-    tables_resources[[paste0("tab", x)]] <- data.table(str_split(dsListTables(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "table")
-    tables_resources[[paste0("res", x)]] <- data.table(str_split(dsListResources(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "resource")
+    tab_key <- paste0("tab", x)
+    res_key <- paste0("res", x)
+    
+    tables_resources[[tab_key]] <- tryCatch(data.table(str_split(dsListTables(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "table"),
+                                                     error = function(w) { data.table() })
+    tables_resources[[res_key]] <- tryCatch(data.table(str_split(dsListResources(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "resource"),
+                                                     error = function(w) { data.table() })
     # lists$tab_res <- rbind(tables, resources)
-    colnames(tables_resources[[paste0("tab", x)]]) <- c("project", "res", "type")
-    colnames(tables_resources[[paste0("res", x)]]) <- c("project", "res", "type")
-    projects_tab <- unique(tables_resources[[paste0("tab", x)]]$project)
-    projects_res <- unique(tables_resources[[paste0("res", x)]]$project)
+    if (nrow(tables_resources[[tab_key]])) {
+      colnames(tables_resources[[tab_key]]) <- c("project", "res", "type")
+      projects_tab <- unique(tables_resources[[tab_key]]$project)
+    } else {
+      projects_tab <- data.table()
+    }
+    if (nrow(tables_resources[[res_key]])) {
+      colnames(tables_resources[[res_key]]) <- c("project", "res", "type")
+      projects_res <- unique(tables_resources[[res_key]]$project)
+    } else {
+      projects_res <- data.table()
+    }
     
     datashield.logout(conns)
     
