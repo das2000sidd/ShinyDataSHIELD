@@ -8,7 +8,13 @@ observeEvent(input$select_tables_descr_stats, {
         if(is.na(res)){FALSE} else{res}
       }))}
     if(!same_cols){
-      shinyalert(shinyalert("Oops!", "Selected tables do not share the same columns, can't pool unequal tables.", type = "error"))
+      shinyalert("Oops!", "Selected tables do not share the same columns, can't pool unequal tables.", type = "error")
+      js$disableTab("summary")
+      js$disableTab("s_plot")
+      js$disableTab("h_plot")
+      js$disableTab("hm_plot")
+      updateTabsetPanel(session, "d_statistics_t",
+                        selected = "a_tables")
     }
     else{
       datashield.rm(connection$conns, "tables_descriptive")
@@ -20,13 +26,13 @@ observeEvent(input$select_tables_descr_stats, {
                                  as.character(lists$available_tables[type_resource == "table"][i,1])
                                ))
       }
+      js$enableTab("summary")
+      js$enableTab("s_plot")
+      js$enableTab("h_plot")
+      js$enableTab("hm_plot")
+      updateTabsetPanel(session, "d_statistics_t",
+                        selected = "summary")
     }
-    js$enableTab("summary")
-    js$enableTab("s_plot")
-    js$enableTab("h_plot")
-    js$enableTab("hm_plot")
-    updateTabsetPanel(session, "d_statistics_t",
-                      selected = "summary")
   }
 })
 
@@ -119,7 +125,6 @@ observe({
           incProgress(i/nrow(tables_available))
         }
       })
-      
     }
     output$available_tables <- renderUI({
       dataTableOutput("available_tables_render")
