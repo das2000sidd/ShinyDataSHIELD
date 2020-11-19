@@ -153,23 +153,55 @@ observeEvent(input$remove, {
 lapply(1:max_servers, function(x){
   observeEvent(input[[paste0("add_server", x)]], {
     if(input[[paste0("tbl_res", x)]] == TRUE){# TABLES
-      connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("Server", x), 
-                                                                                   project = input[[paste0("project_selected", x)]], 
-                                                                                   resources = NA, 
-                                                                                   table = paste(input[[paste0("resource_selected", x)]])))
+      if(is.null(input[[paste0("resource_selected", x)]])){
+        showNotification("Please select a table", duration = 2, closeButton = FALSE, type = "error")
+      }
+      else{
+        if(nrow(merge(connection$server_resources, data.table(server = paste0("Server", x), 
+                                                                  project = input[[paste0("project_selected", x)]], 
+                                                                  resources = NA, 
+                                                                  table = paste(input[[paste0("resource_selected", x)]])))) == 0){
+          connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("Server", x), 
+                                                                                       project = input[[paste0("project_selected", x)]], 
+                                                                                       resources = NA, 
+                                                                                       table = paste(input[[paste0("resource_selected", x)]])))
+        }
+        else{
+          showNotification("Duplicate tables not allowed", duration = 2, closeButton = FALSE, type = "error")
+        }
+      }
+      
     }
     else{# RESOURCES
-      connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("Server", x), 
-                                                                                   project = input[[paste0("project_selected", x)]], 
-                                                                                   resources = paste(input[[paste0("resource_selected", x)]]),
-                                                                                   table = NA))
+      if(is.null(input[[paste0("resource_selected", x)]])){
+        showNotification("Please select a resource", duration = 2, closeButton = FALSE, type = "error")
+      }
+      else{
+        if(nrow(merge(connection$server_resources, data.table(server = paste0("Server", x), 
+                                                                  project = input[[paste0("project_selected", x)]], 
+                                                                  resources = paste(input[[paste0("resource_selected", x)]]),
+                                                                  table = NA))) == 0){
+          connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("Server", x), 
+                                                                                       project = input[[paste0("project_selected", x)]], 
+                                                                                       resources = paste(input[[paste0("resource_selected", x)]]),
+                                                                                       table = NA))
+        }
+        else{
+          showNotification("Duplicate resources not allowed", duration = 2, closeButton = FALSE, type = "error")
+        }
+      }
     }
   })
 })
 
 lapply(1:max_servers, function(x){
   observeEvent(input[[paste0("remove_server", x)]], {
-    connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
+    if(is.null(input$server_resources_table_rows_selected)){
+      showNotification("Please select a row to remove", duration = 2, closeButton = FALSE, type = "error")
+    }
+    else{
+      connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
+    }
   })
 })
 

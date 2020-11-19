@@ -27,7 +27,7 @@ COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
 
 # copy the contents of app folder to image
  
-COPY R /srv/shiny-server/R/
+COPY /inst/shinyApp/ /srv/shiny-server/R/
 
 # install R packages
 
@@ -55,15 +55,8 @@ EXPOSE 80
 # allow permission for user ‘shiny’ to run
  
 RUN sudo chown -R shiny:shiny /srv/shiny-server
-  
-# install linux programs to enable conversion of ms dos file to unix file
- 
-# RUN apt-get update && apt-get install -y dos2unix
  
 # Change access permissions to shiny-server.sh - did not need this for my purposes
  
 RUN ["chmod", "+x", "/usr/bin/shiny-server.sh"] 
  
-# run app
- 
-CMD ["/usr/bin/shiny-server.sh"]
