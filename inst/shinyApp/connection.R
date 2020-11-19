@@ -48,8 +48,8 @@ observeEvent(input$add, {
                                 fluidRow(
                                   column(6,actionButton(paste0("connect_server", tabIndex()), "Connect"))
                                 ),
-                                hidden(actionButton(paste0("add_server", tabIndex()), "Add study")),
-                                hidden(actionButton(paste0("remove_server", tabIndex()), "Remove selected study"))
+                                hidden(actionButton(paste0("add_server", tabIndex()), "Add selected item(s)"))
+                                # hidden(actionButton(paste0("remove_server", tabIndex()), "Remove selected study"))
   ), select=TRUE)
 })
 
@@ -167,11 +167,13 @@ lapply(1:max_servers, function(x){
         showNotification("Please select a table", duration = 2, closeButton = FALSE, type = "error")
       }
       else{
-        if(nrow(merge(connection$server_resources, data.table(server = paste0("Server", x), 
-                                                                  project = input[[paste0("project_selected", x)]], 
-                                                                  resources = NA, 
-                                                                  table = paste(input[[paste0("resource_selected", x)]])))) == 0){
-          connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("Server", x), 
+        if(nrow(merge(connection$server_resources, data.frame(server = paste0("Server", x),
+                                                              study_server = paste0("Study", x),
+                                                              project = input[[paste0("project_selected", x)]], 
+                                                              resources = NA, 
+                                                              table = paste(input[[paste0("resource_selected", x)]])))) == 0){
+          connection$server_resources <- rbind(connection$server_resources, data.frame(server = paste0("Server", x), 
+                                                                                       study_server = paste0("Study", x),
                                                                                        project = input[[paste0("project_selected", x)]], 
                                                                                        resources = NA, 
                                                                                        table = paste(input[[paste0("resource_selected", x)]])))
@@ -187,11 +189,13 @@ lapply(1:max_servers, function(x){
         showNotification("Please select a resource", duration = 2, closeButton = FALSE, type = "error")
       }
       else{
-        if(nrow(merge(connection$server_resources, data.table(server = paste0("Server", x), 
-                                                                  project = input[[paste0("project_selected", x)]], 
-                                                                  resources = paste(input[[paste0("resource_selected", x)]]),
-                                                                  table = NA))) == 0){
-          connection$server_resources <- rbind(connection$server_resources, data.table(server = paste0("Server", x), 
+        if(nrow(merge(connection$server_resources, data.frame(server = paste0("Server", x), 
+                                                              study_server = paste0("Study", x),
+                                                              project = input[[paste0("project_selected", x)]], 
+                                                              resources = paste(input[[paste0("resource_selected", x)]]),
+                                                              table = NA))) == 0){
+          connection$server_resources <- rbind(connection$server_resources, data.frame(server = paste0("Server", x), 
+                                                                                       study_server = paste0("Study", x),
                                                                                        project = input[[paste0("project_selected", x)]], 
                                                                                        resources = paste(input[[paste0("resource_selected", x)]]),
                                                                                        table = NA))
@@ -211,15 +215,22 @@ observeEvent(input$connect_selected, {
     tryCatch({
       # Create all the study servers
       connection$builder <- newDSLoginBuilder()
-      for(i in 1:nrow(connection$creds)) {
-        if(!is.na(connection$creds[i, ]$token)){# Personal Access Token
-          connection$builder$append(server = connection$creds[i, ]$server, url = connection$creds[i, ]$url,
-                                    token = connection$creds[i, ]$token,
+      creds <- merge(connection$creds, connection$server_resources)
+      creds$server <- creds$study_server
+      creds$study_server <- NULL
+      creds$project <- NULL
+      creds$resources <- NULL
+      creds$table <- NULL
+      creds <- unique(creds)
+      for(i in 1:nrow(creds)) {
+        if(!is.na(creds[i, ]$token)){# Personal Access Token
+          connection$builder$append(server = creds[i, ]$server, url = creds[i, ]$url,
+                                    token = creds[i, ]$token,
                                     driver = "OpalDriver")
         }
         else{# User uses regular user and password method
-          connection$builder$append(server = connection$creds[i, ]$server, url = connection$creds[i, ]$url,
-                                    user = connection$creds[i, ]$user, password = connection$creds[i, ]$pass,
+          connection$builder$append(server = creds[i, ]$server, url = creds[i, ]$url,
+                                    user = creds[i, ]$user, password = creds[i, ]$pass,
                                     driver = "OpalDriver")
         }
       }
@@ -232,19 +243,20 @@ observeEvent(input$connect_selected, {
     tryCatch({
       # Load resources and tables
       resources <- connection$server_resources
+      resources <- as.data.table(resources)
       for(i in 1:nrow(resources)){
         if(is.na(resources[i, resources])){ # Tables
-          server_index <- which(resources$server[i] == names(connection$conns))
+          server_index <- which(resources$study_server[i] == names(connection$conns))
           name <- paste0(   resources[i,]$project, ".", resources[i,]$table)
           
           datashield.assign.expr(connection$conns[server_index], make.names(paste0(name, ".t")), as.symbol('1'))
           datashield.assign.table(connection$conns[server_index], make.names(paste0(name, ".t")), name)
 
           lists$available_tables <- rbind(lists$available_tables, c(name = make.names(paste0(name, ".t")), server_index = server_index,
-                                                  server = resources$server[i], type_resource = "table"))
+                                                  server = resources$study_server[i], type_resource = "table"))
         }
         else{ # Resources
-          server_index <- which(resources$server[i] == names(connection$conns))
+          server_index <- which(resources$study_server[i] == names(connection$conns))
           name <- paste0(resources[i,]$project, ".", resources[i,]$resources)
           
           datashield.assign.expr(connection$conns[server_index], make.names(paste0(name, ".r")), as.symbol('1'))
@@ -262,13 +274,13 @@ observeEvent(input$connect_selected, {
             #                        expr = quote(", paste0("resource", i), "))")
             # eval(str2expression(expr))
             lists$available_tables <- rbind(lists$available_tables, c(name = paste0(str_sub(name, end=-2), "t"), server_index = server_index,
-                                                                      server = resources$server[i], type_resource = "table"))
+                                                                      server = resources$study_server[i], type_resource = "table"))
           }
           # "SshResourceClient" correspond to ssh resources, don't need to coerce them
           else if ("SshResourceClient" %in% resource_type){
             # break
             lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
-                                                                      server = resources$server[i], type_resource = "ssh"))
+                                                                      server = resources$study_server[i], type_resource = "ssh"))
           }
           # Otherwise coerce to R object
           else {
@@ -278,29 +290,29 @@ observeEvent(input$connect_selected, {
             resource_type <- unlist(ds.class(name, datasources = connection$conns[server_index]))
             if("GdsGenotypeReader" %in% resource_type) {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
-                                                                        server = resources$server[i], type_resource = "r_obj_vcf"))
+                                                                        server = resources$study_server[i], type_resource = "r_obj_vcf"))
             }
             else if("ExpressionSet" %in% resource_type) {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
-                                                                        server = resources$server[i], type_resource = "r_obj_eset"))
+                                                                        server = resources$study_server[i], type_resource = "r_obj_eset"))
               # expr <- paste0("datashield.assign.expr(connection$conns[", server_index, "], symbol = '", paste0(str_sub(name, end=-2), "t"), "', 
               #                      expr = quote(", name, "))")
               # eval(str2expression(expr))
               # lists$available_tables <- rbind(lists$available_tables, c(name = paste0(str_sub(name, end=-2), "t"), server_index = server_index,
-              #                                                           server = resources$server[i], type_resource = "table"))
+              #                                                           server = resources$study_server[i], type_resource = "table"))
             }
             else if("RangedSummarizedExperiment" %in% resource_type) {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
-                                                                        server = resources$server[i], type_resource = "r_obj_rse"))
+                                                                        server = resources$study_server[i], type_resource = "r_obj_rse"))
               # expr <- paste0("datashield.assign.expr(connection$conns[", server_index, "], symbol = '", paste0(str_sub(name, end=-2), "t"), "', 
               #                      expr = quote(", name, "))")
               # eval(str2expression(expr))
               # lists$available_tables <- rbind(lists$available_tables, c(name = paste0(str_sub(name, end=-2), "t"), server_index = server_index,
-              #                                                           server = resources$server[i], type_resource = "table"))
+              #                                                           server = resources$study_server[i], type_resource = "table"))
             }
             else {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
-                                                                        server = resources$server[i], type_resource = "r_obj"))
+                                                                        server = resources$study_server[i], type_resource = "r_obj"))
             }
           }
         }
