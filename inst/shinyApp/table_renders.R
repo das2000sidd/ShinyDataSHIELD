@@ -59,10 +59,45 @@ output$descriptive_summary <- renderDT(
     }
   }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c())))
 )
-
+proxy = dataTableProxy("server_tab_res")
+observeEvent(input$server_resources_table_cell_edit, {
+  info = input$server_resources_table_cell_edit
+  i = info$row
+  j = info$col
+  v = info$value
+  # browser()
+  if(substr(v, 1, 5) == "Study"){
+    aux <- connection$server_resources[i, j]
+    connection$server_resources[i, j] <<- DT::coerceValue(v, connection$server_resources[i, j])
+    connection$server_resources[i, j] <<- DT::coerceValue(aux, connection$server_resources[i, j])
+    replaceData(proxy, connection$server_resources, resetPaging = TRUE)
+    showNotification("Please avoid the structure 'StudyX' when assigning new study server names.", duration = 8, closeButton = FALSE, type = "error")
+  }
+  else{
+    if(v %in% connection$server_resources$study_server){
+      if(connection$server_resources[connection$server_resources$study_server == v, ]$server == connection$server_resources[i,1]){
+        connection$server_resources[i, j] <<- DT::coerceValue(v, connection$server_resources[i, j])
+        replaceData(proxy, connection$server_resources, resetPaging = FALSE)
+      }
+      else{
+        aux <- connection$server_resources[i, j]
+        connection$server_resources[i, j] <<- DT::coerceValue(v, connection$server_resources[i, j])
+        connection$server_resources[i, j] <<- DT::coerceValue(aux, connection$server_resources[i, j])
+        replaceData(proxy, connection$server_resources, resetPaging = TRUE)
+        showNotification("Objects from differents servers can't be on same study server", duration = 8, closeButton = FALSE, type = "error")
+      }
+    }
+    else{
+      connection$server_resources[i, j] <<- DT::coerceValue(v, connection$server_resources[i, j])
+      replaceData(proxy, connection$server_resources, resetPaging = FALSE)
+    }
+  }
+})
 output$server_resources_table <- renderDT(
-  connection$server_resources, options=list(columnDefs = list(list(visible=FALSE, targets=c(0))),
-                                            paging = FALSE, searching = FALSE)
+  connection$server_resources, 
+  editable = list(target = "cell", disable = list(columns = c(1,3,4,5))),
+  options=list(columnDefs = list(list(visible=FALSE, targets=c(0))),
+                                            paging = FALSE, searching = FALSE, dom = "t")
 )
 
 output$available_variables_type <- renderDT(
