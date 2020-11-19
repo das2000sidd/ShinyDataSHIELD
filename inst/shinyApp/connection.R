@@ -116,6 +116,7 @@ lapply(1:max_servers, function(x){
     toggleElement(paste0("remove_server", x))
     toggleElement(paste0("connect_server", x))
     showElement("connect_selected")
+    showElement("remove_item")
     toggleElement(paste0("tbl_res", x))
     
   })
@@ -147,6 +148,15 @@ observeEvent(input$remove, {
   if(tabIndex() > 1){
     removeTab("tabset1", target=paste0("Server", tabIndex()))
     tabIndex(tabIndex() - 1)
+  }
+})
+
+observeEvent(input$remove_item, {
+  if(is.null(input$server_resources_table_rows_selected)){
+    showNotification("Please select a row to remove", duration = 2, closeButton = FALSE, type = "error")
+  }
+  else{
+    connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
   }
 })
 
@@ -194,16 +204,6 @@ lapply(1:max_servers, function(x){
   })
 })
 
-lapply(1:max_servers, function(x){
-  observeEvent(input[[paste0("remove_server", x)]], {
-    if(is.null(input$server_resources_table_rows_selected)){
-      showNotification("Please select a row to remove", duration = 2, closeButton = FALSE, type = "error")
-    }
-    else{
-      connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
-    }
-  })
-})
 
 observeEvent(input$connect_selected, {
   

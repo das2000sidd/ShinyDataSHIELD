@@ -124,14 +124,14 @@ body <- dashboardBody(
                                     column(6,actionButton("connect_server1", "Connect"))
                                   ),
                                   hidden(actionButton("add_server1", "Add study")),
-                                  hidden(actionButton("remove_server1", "Remove selected study"))
+                                  # hidden(actionButton("remove_server1", "Remove selected study"))
                                   )
                        )
                      ),
                      dataTableOutput("server_resources_table"),
                      fluidRow(
                        column(6,
-                              
+                              hidden(actionButton("remove_item", "Remove selected item")),
                               hidden(actionButton("connect_selected", "Connect"))
                        )
                      )
