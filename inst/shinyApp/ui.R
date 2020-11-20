@@ -277,7 +277,7 @@ body <- dashboardBody(
     tabItem(tabName = "limma",
             fluidRow(
               tabBox(width = 12, id = "limma_t",
-                     tabPanel("Available resources",
+                     tabPanel("Available resources", value = "limma_a",
                               uiOutput("available_tables_lim"),
                               actionButton("select_tables_lim", "Select resource")
                               ),

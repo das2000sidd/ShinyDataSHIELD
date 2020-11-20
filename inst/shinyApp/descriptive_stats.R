@@ -1,14 +1,24 @@
 observeEvent(input$select_tables_descr_stats, {
   if(length(input$available_tables_render_rows_selected) > 0){
     same_cols <- TRUE
+    different_study_server <- TRUE
     if(length(input$available_tables_render_rows_selected) > 1){
       same_cols <- all(lapply(input$available_tables_render_rows_selected, function(i){
         res<-all(match(lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][i,1])]], 
                        lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]))
         if(is.na(res)){FALSE} else{res}
-      }))}
-    if(!same_cols){
-      shinyalert("Oops!", "Selected tables do not share the same columns, can't pool unequal tables.", type = "error")
+      }))
+      different_study_server <- nrow(unique(lists$available_tables[input$available_tables_render_rows_selected,3])) ==
+                                  length(input$available_tables_render_rows_selected)
+      }
+    if(!same_cols | !different_study_server){
+      shinyalert("Oops!",
+                 if(!same_cols){
+                   "Selected tables do not share the same columns, can't pool unequal tables."
+                 }else{
+                   "Selected tables are not on different study servers, can't pool tables on the same study server."
+                 }
+                 , type = "error")
       js$disableTab("summary")
       js$disableTab("s_plot")
       js$disableTab("h_plot")

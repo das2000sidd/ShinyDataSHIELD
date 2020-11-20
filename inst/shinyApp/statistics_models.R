@@ -1,14 +1,28 @@
 observeEvent(input$select_tables_sm, {
   if(length(input$available_tables_sm_render_rows_selected) > 0){
     same_cols <- TRUE
+    different_study_server <- TRUE
     if(length(input$available_tables_sm_render_rows_selected) > 1){
       same_cols <- all(lapply(input$available_tables_sm_render_rows_selected, function(i){
         res<-all(match(lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][i,1])]], 
                        lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected[1],1])]]))
         if(is.na(res)){FALSE} else{res}
-      }))}
-    if(!same_cols){
-      shinyalert(shinyalert("Oops!", "Selected tables do not share the same columns, can't pool unequal tables.", type = "error"))
+      }))
+      different_study_server <- nrow(unique(lists$available_tables[input$available_tables_sm_render_rows_selected,3])) ==
+        length(input$available_tables_sm_render_rows_selected)
+      }
+    if(!same_cols | !different_study_server){
+      shinyalert("Oops!",
+                 if(!same_cols){
+                   "Selected tables do not share the same columns, can't pool unequal tables."
+                 }else{
+                   "Selected tables are not on different study servers, can't pool tables on the same study server."
+                 }
+                 , type = "error")
+      js$disableTab("glm")
+      js$disableTab("mixed_model")
+      updateTabsetPanel(session, "statistic_models_t",
+                        selected = "a_tables_sm")
     }
     else{
       datashield.rm(connection$conns, "tables_sm")
@@ -20,11 +34,11 @@ observeEvent(input$select_tables_sm, {
                                  as.character(lists$available_tables[type_resource == "table"][i,1])
                                ))
       }
+      js$enableTab("glm")
+      js$enableTab("mixed_model")
+      updateTabsetPanel(session, "statistic_models_t",
+                        selected = "glm")
     }
-    js$enableTab("glm")
-    js$enableTab("mixed_model")
-    updateTabsetPanel(session, "statistic_models_t",
-                      selected = "glm")
   }
 })
 
@@ -102,9 +116,12 @@ observe({
     # Get column names from available tables
     tables_available <- lists$available_tables[type_resource == "table"]
     if(length(lists$tables_columns) == 0){
-      for(i in 1:nrow(tables_available)){
-        lists$table_columns[[as.character(tables_available[i,1])]] <- ds.colnames(as.character(tables_available[i,1]), datasources = connection$conns[as.numeric(tables_available[i,2])])[[1]]
-      }
+      withProgress(message = "Reading column names from available tables", value = 0, {
+        for(i in 1:nrow(tables_available)){
+          lists$table_columns[[as.character(tables_available[i,1])]] <- ds.colnames(as.character(tables_available[i,1]), datasources = connection$conns[as.numeric(tables_available[i,2])])[[1]]
+          incProgress(i/nrow(tables_available))
+        }
+      })
     }
     output$available_tables_sm <- renderUI({
       dataTableOutput("available_tables_sm_render")
