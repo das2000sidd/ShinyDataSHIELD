@@ -34,6 +34,15 @@ observeEvent(input$select_tables_sm, {
                                  as.character(lists$available_tables[type_resource == "table"][i,1])
                                ))
       }
+      withProgress(message = "Getting the column types for selected tables", value = 0, {
+        for(var in lists$table_columns[[1]]){
+          type <- ds.class(paste0("tables_sm$", var), connection$conns)[[1]]
+          lists$table_columns_types <- cbind(lists$table_columns_types, rbind(var, type))
+          incProgress(i/length(lists$table_columns[[1]]))
+        }
+      })
+      lists$table_columns_types <- as.data.table(t(lists$table_columns_types))
+      colnames(lists$table_columns_types) <- c("variable", "type")
       js$enableTab("glm")
       js$enableTab("mixed_model")
       updateTabsetPanel(session, "statistic_models_t",
@@ -47,7 +56,6 @@ observeEvent(input$gml_toggle_variables_table, {
 })
 
 observeEvent(input$perform_glm, {
-  browser()
   tryCatch({
     withProgress(message = "Performing GLM", value = 0.5, {
       glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "tables_sm", family = input$gml_output_family,
@@ -57,7 +65,7 @@ observeEvent(input$perform_glm, {
     })
     showElement("glm_results_table_download")
   }, error = function(w){
-    shinyalert("Oops!", "Error performing the GLM", type = "error")
+    shinyalert("Oops!", "Can't perform GLM", type = "error")
     hideElement("glm_results_table_download")
   })
   

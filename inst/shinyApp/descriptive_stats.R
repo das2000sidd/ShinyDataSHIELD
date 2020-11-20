@@ -72,10 +72,6 @@ output$d_statistics_variable_selector <- renderUI({
   }
 })
 
-# output$d_statistics_table_selector <- renderUI({
-#   selectInput("d_statistics_table_selector_value", "Select table", lists$available_tables$table)
-# })
-
 output$d_statistics_variable_selector_scatter <- renderUI({
   if(length(input$available_tables_render_rows_selected) > 1){
     output$d_statistics_variable_selector_scatter_approach <- renderUI({

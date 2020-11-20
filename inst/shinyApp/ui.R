@@ -189,10 +189,11 @@ body <- dashboardBody(
                                           ),
                                           column(6,
                                                  selectInput("gml_output_family", "Output family:", c("gaussian", "poisson", "binomial")),
-                                                 # actionButton("gml_toggle_variables_table","Toggle variables table")
+                                                 actionButton("gml_toggle_variables_table","Toggle variables table"),
                                           )
                                         ),
                                               # dataTableOutput("available_variables_type"),
+                                              hidden(dataTableOutput("available_variables_type")),
                                               dataTableOutput("glm_results_table"),
                                               hidden(downloadButton("glm_results_table_download", "Download GLM results"))
                                      ),
@@ -205,10 +206,10 @@ body <- dashboardBody(
                                        ),
                                        column(6,
                                               selectInput("gmler_output_family", "Output family:", c("poisson", "binomial")),
-                                              # actionButton("gmler_toggle_variables_table","Toggle variables table")
+                                              actionButton("gmler_toggle_variables_table","Toggle variables table")
                                        )
                                      ),
-                                     # dataTableOutput("available_variables_type2"),
+                                     hidden(dataTableOutput("available_variables_type2")),
                                      # uiOutput("glmer_server_select"),
                                      uiOutput("glmer_results_select"),
                                      dataTableOutput("glmer_results_table"),
