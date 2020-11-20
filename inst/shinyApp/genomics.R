@@ -25,6 +25,7 @@ observeEvent(input$run_shell, {
       showElement("plink_results_table_download")
     }, error = function(w){
       shinyalert("Oops!", "PLINK command yielded errors", type = "error")
+      js$disableTab("plink_plot")
       hideElement("plink_show_plain")
       hideElement("plink_results_table_download")
     })

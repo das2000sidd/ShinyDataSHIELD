@@ -28,6 +28,9 @@ observeEvent(input$select_tables_lim, {
     }
     else{
       shinyalert("Oops!", "Non matching columns between servers", type = "error")
+      js$disableTab("limma")
+      updateTabsetPanel(session, "limma_t",
+                        selected = "limma_a")
     }
   }
 })
