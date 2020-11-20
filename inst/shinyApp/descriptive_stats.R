@@ -36,6 +36,16 @@ observeEvent(input$select_tables_descr_stats, {
                                  as.character(lists$available_tables[type_resource == "table"][i,1])
                                ))
       }
+      withProgress(message = "Getting the column types for selected tables", value = 0, {
+        for(var in lists$table_columns[[1]]){
+          type <- ds.class(paste0("tables_descriptive$", var), connection$conns)[[1]]
+          lists$table_columns_types <- cbind(lists$table_columns_types, rbind(var, type))
+          incProgress(i/length(lists$table_columns[[1]]))
+        }
+      })
+      
+      lists$table_columns_types <- as.data.table(t(lists$table_columns_types))
+      colnames(lists$table_columns_types) <- c("variable", "type")
       js$enableTab("summary")
       js$enableTab("s_plot")
       js$enableTab("h_plot")
@@ -52,12 +62,12 @@ output$d_statistics_variable_selector <- renderUI({
       selectInput("d_statistics_variable_selector_value_approach", "Select approach", c("combine", "split"))
     })
     selectInput("d_statistics_variable_selector_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]
+                lists$table_columns_types[type %in% c("factor", "numeric")]$variable
                 )
   }
   else{
     selectInput("d_statistics_variable_selector_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected,1])]]
+                lists$table_columns_types[type %in% c("factor", "numeric")]$variable
                 )
   }
 })
@@ -72,18 +82,18 @@ output$d_statistics_variable_selector_scatter <- renderUI({
       selectInput("d_statistics_variable_selector_scatter_value_approach", "Select approach", c("combine", "split"))
     })
     selectInput("d_statistics_variable_selector_scatter_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]
+                lists$table_columns_types[type %in% c("numeric")]$variable
     )
   }
   else{
     selectInput("d_statistics_variable_selector_scatter_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected,1])]]
+                lists$table_columns_types[type %in% c("numeric")]$variable
     )
   }
 })
 output$d_statistics_variable_selector_scatter2 <- renderUI({
   selectInput("d_statistics_variable_selector_scatter_value2", "Select variable", 
-              lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]
+              lists$table_columns_types[type %in% c("numeric")]$variable
              )
 })
 
@@ -93,12 +103,12 @@ output$d_statistics_variable_selector_histogram <- renderUI({
       selectInput("d_statistics_variable_selector_histogram_value_approach", "Select approach", c("combine", "split"))
     })
     selectInput("d_statistics_variable_selector_histogram_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]
+                lists$table_columns_types[type %in% c("numeric")]$variable
     )
   }
   else{
     selectInput("d_statistics_variable_selector_histogram_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected,1])]]
+                lists$table_columns_types[type %in% c("numeric")]$variable
     )
   }
 })
@@ -109,18 +119,18 @@ output$d_statistics_variable_selector_heatmap <- renderUI({
       selectInput("d_statistics_variable_selector_heatmap_value_approach", "Select approach", c("combine", "split"))
     })
     selectInput("d_statistics_variable_selector_heatmap_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]
+                lists$table_columns_types[type %in% c("numeric")]$variable
     )
   }
   else{
     selectInput("d_statistics_variable_selector_heatmap_value", "Select variable", 
-                lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected,1])]]
+                lists$table_columns_types[type %in% c("numeric")]$variable
     )
   }
 })
 output$d_statistics_variable_selector_heatmap2 <- renderUI({
   selectInput("d_statistics_variable_selector_heatmap_value2", "Select variable", 
-              lists$table_columns[[as.character(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1],1])]]
+              lists$table_columns_types[type %in% c("numeric")]$variable
   )
 })
 

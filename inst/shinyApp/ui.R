@@ -154,16 +154,12 @@ body <- dashboardBody(
                               uiOutput("d_statistics_variable_selector_scatter_approach"),
                               uiOutput("d_statistics_variable_selector_scatter"),
                               uiOutput("d_statistics_variable_selector_scatter2"),
-                              hidden(h5(id = "d_statistics_scatter_plot_error", "One of the variables not numerical,
-                                        a Scatter plot can't be generated")),
                               withSpinner(plotOutput("d_statistics_scatter_plot")),
                               downloadButton("d_statistics_scatter_plot_download", "Download plot")
                      ),
                      tabPanel("Histogram", value = "h_plot",
                               uiOutput("d_statistics_variable_selector_histogram_approach"),
                               uiOutput("d_statistics_variable_selector_histogram"),
-                              hidden(h5(id = "d_statistics_histogram_plot_error", "The variables is not numerical,
-                                        a Histogram can't be generated")),
                               withSpinner(plotOutput("d_statistics_histogram_plot")),
                               downloadButton("d_statistics_histogram_plot_download", "Download plot")
                      ),
@@ -171,8 +167,6 @@ body <- dashboardBody(
                               uiOutput("d_statistics_variable_selector_heatmap_approach"),
                               uiOutput("d_statistics_variable_selector_heatmap"),
                               uiOutput("d_statistics_variable_selector_heatmap2"),
-                              hidden(h5(id = "d_statistics_heatmap_plot_error", "One of the variables is not numerical,
-                                        a Heatmap can't be generated")),
                               withSpinner(plotOutput("d_statistics_heatmap_plot")),
                               downloadButton("d_statistics_heatmap_plot_download", "Download plot")
                      )
