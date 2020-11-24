@@ -1,3 +1,22 @@
+lapply(1:max_servers, function(x){
+  observeEvent(input[[paste0("info_opal_", x)]], {
+    url <- input[[paste0("url", x)]]
+    project <- input[[paste0("project_selected", x)]]
+    res <- input[[paste0("resource_selected", x)]]
+    if(input[[paste0("tbl_res", x)]] == TRUE){
+      is_table <- "TABLES"
+    }
+    else{
+      is_table <- "RESOURCES"
+    }
+    for(i in res){
+      url_builder <- paste0(url, "ui/index.html#!project;name=", project, ";tab=", is_table, 
+                            ";path=", paste(project, i, sep = "."))
+      browseURL(url_builder)
+    }
+  })
+})
+
 observeEvent(input$add, {
   tabIndex(tabIndex() + 1)
   appendTab("tabset1", tabPanel(paste0("Server", tabIndex()), 
@@ -48,8 +67,8 @@ observeEvent(input$add, {
                                 fluidRow(
                                   column(6,actionButton(paste0("connect_server", tabIndex()), "Connect"))
                                 ),
-                                hidden(actionButton(paste0("add_server", tabIndex()), "Add selected item(s)"))
-                                # hidden(actionButton(paste0("remove_server", tabIndex()), "Remove selected study"))
+                                hidden(actionButton(paste0("add_server", tabIndex()), "Add selected item(s)")),
+                                hidden(actionButton(paste0("info_opal_", tabIndex()), "Further information of selection"))
   ), select=TRUE)
 })
 
@@ -118,7 +137,7 @@ lapply(1:max_servers, function(x){
     showElement("connect_selected")
     showElement("remove_item")
     toggleElement(paste0("tbl_res", x))
-    
+    toggleElement(paste0("info_opal_", x))
   })
 })
 
@@ -325,24 +344,29 @@ observeEvent(input$connect_selected, {
       ## CADA COP PER SI MOSTRAR UN ERROR O NO A LA TAB, DAQUESTA FORMA TOTES LES TABS QUE ENSENYEM
       ## LES PODEM FER SERVIR XAXI PISTAXI
       
-      ## d_statistics. Accepts "table", "r_obj_eset", "r_obj_rse"
+      ## table_columns_a. Accepts "table"
       if(any(unique(lists$available_tables$type_resource) %in% c("table"))) {
         show(selector = "ul li:eq(1)")
       }
       
-      ## statistics_model. Accepts "table"
+      ## d_statistics. Accepts "table", "r_obj_eset", "r_obj_rse"
       if(any(unique(lists$available_tables$type_resource) %in% c("table"))) {
         show(selector = "ul li:eq(2)")
       }
       
+      ## statistics_model. Accepts "table"
+      if(any(unique(lists$available_tables$type_resource) %in% c("table"))) {
+        show(selector = "ul li:eq(3)")
+      }
+      
       ## genomics. Accepts "ssh" and "r_obj_vcf"
       if(any(unique(lists$available_tables$type_resource) %in% c("ssh", "r_obj_vcf"))) {
-        show(selector = "ul li:eq(3)")
+        show(selector = "ul li:eq(4)")
       }
       
       ## omics. Accepts 
       if(any(unique(lists$available_tables$type_resource) %in% c("r_obj_rse", "r_obj_eset"))) {
-        show(selector = "ul li:eq(6)")
+        show(selector = "ul li:eq(7)")
       }
       
       connection$active <- TRUE

@@ -53,6 +53,7 @@ sidebar <- dashboardSidebar(
     id = "tabs",
     uiOutput("userpanel"),
     menuItem("Connect to server", tabName = "server_connect"),
+    hidden(menuItem("Table columns types", tabName = "table_columns_a")),
     hidden(menuItem("Descriptive statistics", tabName = "d_statistics")),
     hidden(menuItem("Statistic models", tabName = "statistic_models")),
     # hidden(menuItem("Mixed statistic models", tabName = "statistic_models_mixed")),
@@ -123,8 +124,8 @@ body <- dashboardBody(
                                   fluidRow(
                                     column(6,actionButton("connect_server1", "Connect"))
                                   ),
-                                  hidden(actionButton("add_server1", "Add selected item(s)"))
-                                  # hidden(actionButton("remove_server1", "Remove selected study"))
+                                  hidden(actionButton("add_server1", "Add selected item(s)")),
+                                  hidden(actionButton("info_opal_1", "Further information of selection"))
                                   )
                        )
                      ),
@@ -135,6 +136,20 @@ body <- dashboardBody(
                        )
                      ),
                      dataTableOutput("server_resources_table"),
+            )
+    ),
+    tabItem(tabName = "table_columns_a",
+            fluidRow(
+              tabBox(width = 12, id = "table_columns_selection",
+                     tabPanel("Available tables", value = "a_tables",
+                              uiOutput("available_tables_cols"),
+                              actionButton("select_tables_cols", "Select tables")
+                     ),
+                     tabPanel("Column types", value  = "col_tables",
+                              # actionButton("stop","stop"),
+                              DTOutput("column_types_table")
+                     )
+                    )
             )
     ),
     tabItem(tabName = "d_statistics",

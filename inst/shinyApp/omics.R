@@ -1,18 +1,25 @@
 observeEvent(input$select_tables_lim, {
   if(length(input$available_tables_lim_render_rows_selected) > 0){
-    same_cols_1 <- all(lapply(input$available_tables_lim_render_rows_selected, function(i){
-      res<-all(match(lists$resource_variables[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][i,1])]], 
-                     lists$resource_variables[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][1,1])]]))
-      if(is.na(res)){FALSE} else{res}
-    }))
-    
-    same_cols_2 <- all(lapply(input$available_tables_lim_render_rows_selected, function(i){
-      res<-all(match(lists$limma_labels[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][i,1])]], 
-                     lists$limma_labels[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][1,1])]]))
-      if(is.na(res)){FALSE} else{res}
-    }))
-    
-    if(same_cols_1 & same_cols_2){
+    different_study_server <- TRUE
+    same_cols_1 <- TRUE
+    same_cols_2 <- TRUE
+    if(length(input$available_tables_lim_render_rows_selected) > 1){
+      same_cols_1 <- all(lapply(input$available_tables_lim_render_rows_selected, function(i){
+        res<-all(match(lists$resource_variables[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][i,1])]], 
+                       lists$resource_variables[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][1,1])]]))
+        if(is.na(res)){FALSE} else{res}
+      }))
+      
+      same_cols_2 <- all(lapply(input$available_tables_lim_render_rows_selected, function(i){
+        res<-all(match(lists$limma_labels[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][i,1])]], 
+                       lists$limma_labels[[as.character(lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][1,1])]]))
+        if(is.na(res)){FALSE} else{res}
+      }))
+      different_study_server <- nrow(unique(lists$available_tables[input$available_tables_lim_render_rows_selected,3])) ==
+        length(input$available_tables_lim_render_rows_selected) 
+    }
+    browser()
+    if(same_cols_1 & same_cols_2 & different_study_server){
       datashield.rm(connection$conns, "resource_lim")
       for(i in input$available_tables_lim_render_rows_selected){
         lists$available_tables[type_resource %in% c("r_obj_rse", "r_obj_eset")][i,2]
@@ -27,7 +34,13 @@ observeEvent(input$select_tables_lim, {
                         selected = "limma")
     }
     else{
-      shinyalert("Oops!", "Non matching columns between servers", type = "error")
+      shinyalert("Oops!", 
+                 if(!same_cols_1 | !same_cols_2){
+                   "Selected resources do not share the same columns, can't pool unequal resources"
+                 }else{
+                   "Selected resources are not on different study servers, can't pool resources on the same study server."
+                 }
+                 , type = "error")
       js$disableTab("limma")
       updateTabsetPanel(session, "limma_t",
                         selected = "limma_a")

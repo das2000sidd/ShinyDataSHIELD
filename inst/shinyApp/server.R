@@ -18,8 +18,10 @@ server <- function(input, output, session) {
   source("genomics.R", local = TRUE)
   source("omics.R", local = TRUE)
   source("download_handlers.R", local = TRUE)
+  source("table_columns.R", local = TRUE)
   
   js$disableTab("summary")
+  js$disableTab("col_tables")
   js$disableTab("s_plot")
   js$disableTab("h_plot")
   js$disableTab("hm_plot")

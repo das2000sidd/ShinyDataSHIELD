@@ -3,6 +3,11 @@ output$available_tables_render <- renderDT(
                                                                  paging = FALSE, searching = FALSE)
 )
 
+output$available_tables_cols_render <- renderDT(
+  lists$available_tables[type_resource == "table"], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
+                                                                 paging = FALSE, searching = FALSE)
+)
+
 output$available_tables_sm_render <- renderDT(
   lists$available_tables[type_resource == "table"], options=list(columnDefs = list(list(visible=FALSE, targets=c(0,2,4))),
                                                                  paging = FALSE, searching = FALSE)
@@ -100,6 +105,46 @@ output$server_resources_table <- renderDT(
                                             paging = FALSE, searching = FALSE, dom = "t")
 )
 
+output$column_types_table <- renderDT({
+  tryCatch({
+    tab <- datatable(
+      lists$table_columns_types, editable = "cell", callback = 
+        JS(
+          "function onUpdate(updatedCell, updatedRow, oldValue){",
+          "Shiny.onInputChange('jsValue', [updatedCell.index(), updatedCell.data()]);",
+          "}",
+          "table.MakeCellsEditable({",
+          "  onUpdate: onUpdate,",
+          "  inputCss: 'my-input-class',",
+          "  columns: [2],",
+          "  confirmationButton: {",
+          "    confirmCss: 'my-confirm-class',",
+          "    cancelCss: 'my-cancel-class'",
+          "  },",
+          "  inputTypes: [",
+          "    {",
+          "      column: 2,",
+          "      type: 'list',",
+          "      options: [",
+          "        {value: 'numeric', display: 'numeric'},",
+          "        {value: 'factor',      display: 'factor'},",
+          "        {value: 'character',    display: 'character'}",
+          "      ]",
+          "    }",
+          "  ]",
+          "});"),
+      options = list(pageLength = nrow(lists$table_columns_types), scrollY = TRUE)
+    )
+    path <- "../../www/" # folder containing the files dataTables.cellEdit.js
+    # and dataTables.cellEdit.css
+    dep <- htmltools::htmlDependency(
+      "CellEdit", "1.0.19", path,
+      script = "dataTables.cellEdit.js", stylesheet = "dataTables.cellEdit.css")
+    tab$dependencies <- c(tab$dependencies, list(dep))
+    return(tab)
+  }, error = function(w){})
+})
+
 output$available_variables_type <- renderDT(
   lists$table_columns_types, options=list(columnDefs = list(list(visible=FALSE, targets=c(0))),
                                           paging = FALSE, searching = FALSE)
@@ -112,7 +157,7 @@ output$available_variables_type2 <- renderDT(
 
 output$glm_results_table <- renderDT(
   tryCatch({round(glm_results$glm_result_table$coefficients, digits = 4)}, error = function(w){NULL}), 
-  options=list(paging = FALSE, searching = FALSE)
+  options=list(paging = FALSE, searching = FALSE, scrollX = TRUE)
 )
 
 output$glmer_results_table <- renderDT({
@@ -124,7 +169,7 @@ output$glmer_results_table <- renderDT({
   tryCatch({round(glmer_table, digits = 4)}, error = function(w){NULL})
 }
   , 
-  options=list(paging = FALSE, searching = FALSE)
+  options=list(paging = FALSE, searching = FALSE, scrollX = TRUE)
 )
 
 output$limma_results_table <- renderDT({
@@ -133,12 +178,12 @@ output$limma_results_table <- renderDT({
   eval(str2expression(exp))
   as.data.table(lapply(as.data.table(res), format_num))
 },
-  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))), scrollX = TRUE)
 )
 
 output$plink_results_table <- renderDT(
   as.data.table(lapply(as.data.table(plink_results$result_table[[1]]$results), format_num)),
-  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))), scrollX = TRUE)
 )
 
 # output$vcf_ct_counts <- renderDT(
@@ -166,5 +211,5 @@ output$plink_results_table <- renderDT(
 output$vcf_results <- renderDT(
   tryCatch({as.data.table(lapply(as.data.table(do.call("rbind", vcf_results$result_table_gwas)), format_num))}, 
            error = function(w){NULL}),
-  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))))
+  options = list(columnDefs = list(list(visible=FALSE, targets=c(0))), scrollX = TRUE)
 )
