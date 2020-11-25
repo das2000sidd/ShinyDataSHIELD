@@ -34,13 +34,16 @@ observeEvent(input$add, {
                                          conditionalPanel(
                                            condition = paste0("input.pat_switch" , tabIndex(), "== false"),
                                            textInput(paste0("user",tabIndex()), "User", value = "administrator"),
-                                           # tags$head(tags$script(HTML('
-                                           #          $(document).keyup(function(event) {
-                                           #              if ($("#password2").is(":focus") && (event.keyCode == 13)) {
-                                           #                  $("#connect_server2").click();
-                                           #              }
-                                           #          });
-                                           #          '))),
+                                           tags$head(tags$script(HTML(paste0(
+                                             '$(document).keyup(function(event) {
+                                              if ($("#password', tabIndex(), '").is(":focus") && (event.keyCode == 13)) {
+                                                  $("#connect_server', tabIndex(), '").click();
+                                              };
+                                              if ($("#pat', tabIndex(), '").is(":focus") && (event.keyCode == 13)) {
+                                                  $("#connect_server', tabIndex(), '").click();
+                                              }
+                                              });'
+                                           )))),
                                            passwordInput(paste0("password", tabIndex()), "Password", value = "password")
                                          ),
                                          materialSwitch(inputId = paste0("pat_switch", tabIndex()), label = "Use Personal Access Token", status = "primary")

@@ -16,8 +16,11 @@ library(stringr)
 
 jscode <- '
 $(document).keyup(function(event) {
-    if ($("#password").is(":focus") && (event.keyCode == 13)) {
-        $("#connect_server").click();
+    if ($("#password1").is(":focus") && (event.keyCode == 13)) {
+        $("#connect_server1").click();
+    };
+    if ($("#pat1").is(":focus") && (event.keyCode == 13)) {
+        $("#connect_server1").click();
     }
 });
 '
