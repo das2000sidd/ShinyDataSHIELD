@@ -18,7 +18,7 @@ observeEvent(input$select_tables_lim, {
       different_study_server <- nrow(unique(lists$available_tables[input$available_tables_lim_render_rows_selected,3])) ==
         length(input$available_tables_lim_render_rows_selected) 
     }
-    browser()
+
     if(same_cols_1 & same_cols_2 & different_study_server){
       datashield.rm(connection$conns, "resource_lim")
       for(i in input$available_tables_lim_render_rows_selected){

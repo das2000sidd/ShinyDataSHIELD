@@ -2,13 +2,10 @@
 % Please edit documentation in R/app.R
 \name{app}
 \alias{app}
-\title{Title}
+\title{Launch ShinyDataSHIELD}
 \usage{
 app()
 }
-\value{
-
-}
 \description{
-Title
+Launch ShinyDataSHIELD
 }

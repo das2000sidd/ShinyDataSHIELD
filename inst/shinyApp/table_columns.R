@@ -66,6 +66,10 @@ observeEvent(input$jsValue, {
         } else if(new_class == "numeric"){
           ds.asNumeric(complete_name, variable, datasources = connection$conns[as.numeric(tables_available[index,2])])
         }
+        # browser()
+        # DSI::datashield.assign.expr(connection$conns[as.numeric(tables_available[index,2])], 
+        #                                                          "RSRC.CNSIM1.t[,3]", 
+        #                                                          as.symbol("NULL"))
         incProgress(0.2 / length(input$available_tables_cols_render_rows_selected))
         # Create auxiliary tables without the column 'variable', one table is the columns on the left, the other the
         # columns on the right
@@ -94,16 +98,30 @@ observeEvent(input$jsValue, {
         incProgress(0.3 / length(input$available_tables_cols_render_rows_selected))
         # Merge auxiliary table with column with new class and assign same name as the original table
         if(extreme_left){
-          ds.cbind(c(variable, "aux_col_no_variable_right"), newobj = as.character(table_name[index]), 
-                   datasources = connection$conns[as.numeric(tables_available[index,2])])
+          cally <- paste0("cbind(", variable, ", aux_col_no_variable_right)")
+          DSI::datashield.assign.expr(connection$conns[as.numeric(tables_available[index,2])],
+                                      as.character(table_name[index]), 
+                                      as.symbol(cally))
+          # ds.cbind(c(variable, "aux_col_no_variable_right"), newobj = as.character(table_name[index]), 
+          #          datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_right", datasources = connection$conns[as.numeric(tables_available[index,2])])
         } else if(extreme_right){
-          ds.cbind(c("aux_col_no_variable_left", variable), newobj = as.character(table_name[index]), 
-                   datasources = connection$conns[as.numeric(tables_available[index,2])])
+          cally <- paste0("cbind(aux_col_no_variable_left,", variable, ")")
+          DSI::datashield.assign.expr(connection$conns[as.numeric(tables_available[index,2])],
+                                      as.character(table_name[index]), 
+                                      as.symbol(cally))
+          
+          # ds.cbind(c("aux_col_no_variable_left", variable), newobj = as.character(table_name[index]), 
+          #          datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_left", datasources = connection$conns[as.numeric(tables_available[index,2])])
         } else{
-          ds.cbind(c("aux_col_no_variable_left", variable, "aux_col_no_variable_right"), newobj = as.character(table_name[index]), 
-                   datasources = connection$conns[as.numeric(tables_available[index,2])])
+          cally <- paste0("cbind(aux_col_no_variable_left,", variable, ", aux_col_no_variable_right)")
+          DSI::datashield.assign.expr(connection$conns[as.numeric(tables_available[index,2])],
+                                      as.character(table_name[index]), 
+                                      as.symbol(cally))
+          
+          # ds.cbind(c("aux_col_no_variable_left", variable, "aux_col_no_variable_right"), newobj = as.character(table_name[index]), 
+          #          datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_left", datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_right", datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm(variable, datasources = connection$conns[as.numeric(tables_available[index,2])])
@@ -114,22 +132,38 @@ observeEvent(input$jsValue, {
     lists$table_columns_types[row, column] <<- new_class#  DT::coerceValue(new_class, lists$table_columns_types[row, column, with = FALSE])
     replaceData(proxy, lists$table_columns_types, resetPaging = FALSE)
     
+    js$disableTab("summary")
+    js$disableTab("s_plot")
+    js$disableTab("h_plot")
+    js$disableTab("hm_plot")
+    updateTabsetPanel(session, "d_statistics_t",
+                      selected = "a_tables")
+    
+    js$disableTab("glm")
+    js$disableTab("mixed_model")
+    updateTabsetPanel(session, "statistic_models_t",
+                      selected = "a_tables_sm")
+    
+    updateTabsetPanel(session, "table_columns_selection",
+                      selected = "col_tables")
+    
+    
   }, error = function(w){
     showNotification("Class change not allowed", duration = 2, closeButton = FALSE, type = "error")
   })
 
 })
 
-# proxy = dataTableProxy('a')
-observeEvent(input$column_types_table_cell_edit, {
-  browser()
-  info = input$column_types_table_cell_edit
-  i = info$row
-  j = info$col
-  v = info$value
-  exposom$lod_candidates[i, j] <<- DT::coerceValue(v, as.numeric(exposom$lod_candidates[i, j]))
-  replaceData(proxy, exposom$lod_candidates, resetPaging = FALSE)
-})
+# # proxy = dataTableProxy('a')
+# observeEvent(input$column_types_table_cell_edit, {
+#   browser()
+#   info = input$column_types_table_cell_edit
+#   i = info$row
+#   j = info$col
+#   v = info$value
+#   exposom$lod_candidates[i, j] <<- DT::coerceValue(v, as.numeric(exposom$lod_candidates[i, j]))
+#   replaceData(proxy, exposom$lod_candidates, resetPaging = FALSE)
+# })
 
 observe({
   if(input$tabs == "table_columns_a") {

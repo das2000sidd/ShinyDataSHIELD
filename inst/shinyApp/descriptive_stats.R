@@ -40,7 +40,7 @@ observeEvent(input$select_tables_descr_stats, {
         lists$table_columns_types <- NULL
         for(var in lists$table_columns[[1]]){
           type <- ds.class(paste0("tables_descriptive$", var), 
-                           connection$conns[as.numeric(lists$available_tables[input$available_tables_cols_render_rows_selected,2][1])])[[1]]
+                           connection$conns[as.numeric(lists$available_tables[input$available_tables_render_rows_selected,2][1])])[[1]]
           lists$table_columns_types <- cbind(lists$table_columns_types, rbind(var, paste(type, collapse = ", ")))
           incProgress(1/length(lists$table_columns[[1]]))
         }
