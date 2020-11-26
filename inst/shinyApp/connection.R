@@ -77,70 +77,75 @@ lapply(1:max_servers, function(x){
 
 lapply(1:max_servers, function(x){
   observeEvent(input[[paste0("connect_server", x)]], {
-    builder <- newDSLoginBuilder()
-    if(input[[paste0("pat_switch", x)]]){# If user selects to use Personal Access Token
-      builder$append(server = paste0("server", x), url = input[[paste0("url", x)]],
-                     token = input[[paste0("pat", x)]],
-                     driver = "OpalDriver")
-      connection$creds <- rbind(connection$creds, data.table(server = paste0("Server", x),
-                                                             url = input[[paste0("url", x)]],
-                                                             user = NA,
-                                                             pass = NA,
-                                                             token = input[[paste0("pat", x)]]),
-                                fill = TRUE)
-    }
-    else{# User uses regular user and password method
-      builder$append(server = paste0("server", x), url = input[[paste0("url", x)]],
-                     user = input[[paste0("user", x)]], password = input[[paste0("password", x)]],
-                     driver = "OpalDriver")
-      connection$creds <- rbind(connection$creds, data.table(server = paste0("Server", x),
-                                                             url = input[[paste0("url", x)]],
-                                                             user = input[[paste0("user", x)]],
-                                                             pass = input[[paste0("password", x)]],
-                                                             token = NA),
-                                fill = TRUE)
-    }
-    logindata <- builder$build()
-    conns <- datashield.login(logins = logindata)
-    
-    tab_key <- paste0("tab", x)
-    res_key <- paste0("res", x)
-    
-    tables_resources[[tab_key]] <- tryCatch(data.table(str_split(dsListTables(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "table"),
-                                                     error = function(w) { data.table() })
-    tables_resources[[res_key]] <- tryCatch(data.table(str_split(dsListResources(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "resource"),
-                                                     error = function(w) { data.table() })
-    # lists$tab_res <- rbind(tables, resources)
-    if (nrow(tables_resources[[tab_key]])) {
-      colnames(tables_resources[[tab_key]]) <- c("project", "res", "type")
-      projects_tab <- unique(tables_resources[[tab_key]]$project)
-    } else {
-      projects_tab <- data.table()
-    }
-    if (nrow(tables_resources[[res_key]])) {
-      colnames(tables_resources[[res_key]]) <- c("project", "res", "type")
-      projects_res <- unique(tables_resources[[res_key]]$project)
-    } else {
-      projects_res <- data.table()
-    }
-    
-    datashield.logout(conns)
-    
-    output[[paste0("project_selector", x)]] <- renderUI({
-      if(input[[paste0("tbl_res", x)]] == TRUE){# TABLES
-        selectInput(paste0("project_selected", x), "Project", projects_tab, selected = NULL)
+    tryCatch({
+      builder <- newDSLoginBuilder()
+      if(input[[paste0("pat_switch", x)]]){# If user selects to use Personal Access Token
+        builder$append(server = paste0("server", x), url = input[[paste0("url", x)]],
+                       token = input[[paste0("pat", x)]],
+                       driver = "OpalDriver")
+        connection$creds <- rbind(connection$creds, data.table(server = paste0("Server", x),
+                                                               url = input[[paste0("url", x)]],
+                                                               user = NA,
+                                                               pass = NA,
+                                                               token = input[[paste0("pat", x)]]),
+                                  fill = TRUE)
       }
-      else{# RESOURCES
-        selectInput(paste0("project_selected", x), "Project", projects_res, selected = NULL)
+      else{# User uses regular user and password method
+        builder$append(server = paste0("server", x), url = input[[paste0("url", x)]],
+                       user = input[[paste0("user", x)]], password = input[[paste0("password", x)]],
+                       driver = "OpalDriver")
+        connection$creds <- rbind(connection$creds, data.table(server = paste0("Server", x),
+                                                               url = input[[paste0("url", x)]],
+                                                               user = input[[paste0("user", x)]],
+                                                               pass = input[[paste0("password", x)]],
+                                                               token = NA),
+                                  fill = TRUE)
       }
+      logindata <- builder$build()
+      conns <- datashield.login(logins = logindata)
+      
+      tab_key <- paste0("tab", x)
+      res_key <- paste0("res", x)
+      
+      tables_resources[[tab_key]] <- tryCatch(data.table(str_split(dsListTables(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "table"),
+                                              error = function(w) { data.table() })
+      tables_resources[[res_key]] <- tryCatch(data.table(str_split(dsListResources(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "resource"),
+                                              error = function(w) { data.table() })
+      # lists$tab_res <- rbind(tables, resources)
+      if (nrow(tables_resources[[tab_key]])) {
+        colnames(tables_resources[[tab_key]]) <- c("project", "res", "type")
+        projects_tab <- unique(tables_resources[[tab_key]]$project)
+      } else {
+        projects_tab <- data.table()
+      }
+      if (nrow(tables_resources[[res_key]])) {
+        colnames(tables_resources[[res_key]]) <- c("project", "res", "type")
+        projects_res <- unique(tables_resources[[res_key]]$project)
+      } else {
+        projects_res <- data.table()
+      }
+      
+      datashield.logout(conns)
+      
+      output[[paste0("project_selector", x)]] <- renderUI({
+        if(input[[paste0("tbl_res", x)]] == TRUE){# TABLES
+          selectInput(paste0("project_selected", x), "Project", projects_tab, selected = NULL)
+        }
+        else{# RESOURCES
+          selectInput(paste0("project_selected", x), "Project", projects_res, selected = NULL)
+        }
+      })
+      toggleElement(paste0("add_server", x))
+      toggleElement(paste0("remove_server", x))
+      toggleElement(paste0("connect_server", x))
+      showElement("connect_selected")
+      showElement("remove_item")
+      toggleElement(paste0("tbl_res", x))
+      toggleElement(paste0("info_opal_", x))
+    },
+    error = function(w){
+      showNotification(as.character(w), duration = 4, closeButton = FALSE, type = "error")
     })
-    toggleElement(paste0("add_server", x))
-    toggleElement(paste0("remove_server", x))
-    toggleElement(paste0("connect_server", x))
-    showElement("connect_selected")
-    showElement("remove_item")
-    toggleElement(paste0("tbl_res", x))
-    toggleElement(paste0("info_opal_", x))
   })
 })
 
