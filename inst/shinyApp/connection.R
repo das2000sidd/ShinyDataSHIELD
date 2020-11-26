@@ -1,22 +1,3 @@
-lapply(1:max_servers, function(x){
-  observeEvent(input[[paste0("info_opal_", x)]], {
-    url <- input[[paste0("url", x)]]
-    project <- input[[paste0("project_selected", x)]]
-    res <- input[[paste0("resource_selected", x)]]
-    if(input[[paste0("tbl_res", x)]] == TRUE){
-      is_table <- "TABLES"
-    }
-    else{
-      is_table <- "RESOURCES"
-    }
-    for(i in res){
-      url_builder <- paste0(url, "ui/index.html#!project;name=", project, ";tab=", is_table, 
-                            ";path=", paste(project, i, sep = "."))
-      browseURL(url_builder)
-    }
-  })
-})
-
 observeEvent(input$add, {
   tabIndex(tabIndex() + 1)
   appendTab("tabset1", tabPanel(paste0("Server", tabIndex()), 
@@ -73,6 +54,25 @@ observeEvent(input$add, {
                                 hidden(actionButton(paste0("add_server", tabIndex()), "Add selected item(s)")),
                                 hidden(actionButton(paste0("info_opal_", tabIndex()), "Further information of selection"))
   ), select=TRUE)
+})
+
+lapply(1:max_servers, function(x){
+  observeEvent(input[[paste0("info_opal_", x)]], {
+    url <- input[[paste0("url", x)]]
+    project <- input[[paste0("project_selected", x)]]
+    res <- input[[paste0("resource_selected", x)]]
+    if(input[[paste0("tbl_res", x)]] == TRUE){
+      is_table <- "TABLES"
+    }
+    else{
+      is_table <- "RESOURCES"
+    }
+    for(i in res){
+      url_builder <- paste0(url, "ui/index.html#!project;name=", project, ";tab=", is_table, 
+                            ";path=", paste(project, i, sep = "."))
+      browseURL(url_builder)
+    }
+  })
 })
 
 lapply(1:max_servers, function(x){
@@ -165,23 +165,6 @@ lapply(1:max_servers, function(x){
   })
 })
 
-
-observeEvent(input$remove, {
-  if(tabIndex() > 1){
-    removeTab("tabset1", target=paste0("Server", tabIndex()))
-    tabIndex(tabIndex() - 1)
-  }
-})
-
-observeEvent(input$remove_item, {
-  if(is.null(input$server_resources_table_rows_selected)){
-    showNotification("Please select a row to remove", duration = 2, closeButton = FALSE, type = "error")
-  }
-  else{
-    connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
-  }
-})
-
 lapply(1:max_servers, function(x){
   observeEvent(input[[paste0("add_server", x)]], {
     if(input[[paste0("tbl_res", x)]] == TRUE){# TABLES
@@ -230,6 +213,21 @@ lapply(1:max_servers, function(x){
   })
 })
 
+observeEvent(input$remove, {
+  if(tabIndex() > 1){
+    removeTab("tabset1", target=paste0("Server", tabIndex()))
+    tabIndex(tabIndex() - 1)
+  }
+})
+
+observeEvent(input$remove_item, {
+  if(is.null(input$server_resources_table_rows_selected)){
+    showNotification("Please select a row to remove", duration = 2, closeButton = FALSE, type = "error")
+  }
+  else{
+    connection$server_resources <- connection$server_resources[-input$server_resources_table_rows_selected,]
+  }
+})
 
 observeEvent(input$connect_selected, {
   
@@ -285,16 +283,10 @@ observeEvent(input$connect_selected, {
           datashield.assign.resource(connection$conns[server_index], make.names(paste0(name, ".r")), name)
           name <- make.names(paste0(name, ".r"))
           resource_type <- unlist(ds.class(name, datasources = connection$conns[server_index]))
-        
-          # c("TidyFileResourceClient", "SQLResourceClient") correspond to resources that have to be coerded to data.frame
           if (any(c("TidyFileResourceClient", "SQLResourceClient") %in% resource_type)){
             expression = paste0("datashield.assign.expr(symbol = '", paste0(str_sub(name, end=-2), "t"), "', 
                        expr = quote(as.resource.data.frame(", name, ")), conns = connection$conns[", server_index, "])")
             eval(str2expression(expression))
-            # lists$available_tables <- lists$available_tables[resource_internal == paste0("resource", i), type_resource := "table"]
-            # expr <- paste0("datashield.assign.expr(connection$conns, symbol = 'table1', 
-            #                        expr = quote(", paste0("resource", i), "))")
-            # eval(str2expression(expr))
             lists$available_tables <- rbind(lists$available_tables, c(name = paste0(str_sub(name, end=-2), "t"), server_index = server_index,
                                                                       server = resources$study_server[i], type_resource = "table"))
           }
@@ -317,20 +309,10 @@ observeEvent(input$connect_selected, {
             else if("ExpressionSet" %in% resource_type) {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
                                                                         server = resources$study_server[i], type_resource = "r_obj_eset"))
-              # expr <- paste0("datashield.assign.expr(connection$conns[", server_index, "], symbol = '", paste0(str_sub(name, end=-2), "t"), "', 
-              #                      expr = quote(", name, "))")
-              # eval(str2expression(expr))
-              # lists$available_tables <- rbind(lists$available_tables, c(name = paste0(str_sub(name, end=-2), "t"), server_index = server_index,
-              #                                                           server = resources$study_server[i], type_resource = "table"))
             }
             else if("RangedSummarizedExperiment" %in% resource_type) {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
                                                                         server = resources$study_server[i], type_resource = "r_obj_rse"))
-              # expr <- paste0("datashield.assign.expr(connection$conns[", server_index, "], symbol = '", paste0(str_sub(name, end=-2), "t"), "', 
-              #                      expr = quote(", name, "))")
-              # eval(str2expression(expr))
-              # lists$available_tables <- rbind(lists$available_tables, c(name = paste0(str_sub(name, end=-2), "t"), server_index = server_index,
-              #                                                           server = resources$study_server[i], type_resource = "table"))
             }
             else {
               lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
@@ -341,11 +323,6 @@ observeEvent(input$connect_selected, {
       }
       
       lists$available_tables <- data.table(lists$available_tables)
-      
-      ## HERE IMPLEMENTAR SEGONS EL lists$available_tables QUINS TABS ES MOSTREN!
-      ## REVISAR PER TANT ELS SHIY ALERTS DELS TABS PK IA NO FARA FALTA MIRAR QUE COLLONS TENIM
-      ## CADA COP PER SI MOSTRAR UN ERROR O NO A LA TAB, DAQUESTA FORMA TOTES LES TABS QUE ENSENYEM
-      ## LES PODEM FER SERVIR XAXI PISTAXI
       
       ## table_columns_a. Accepts "table"
       if(any(unique(lists$available_tables$type_resource) %in% c("table"))) {
@@ -380,6 +357,5 @@ observeEvent(input$connect_selected, {
       shinyalert("Oops!", "Broken resource", type = "error")
     })
   })
-  ## IMPLEMENT CONSISTENCY CHECK IF MULTIPLE STUDIES, IF TABLES , ALL STUDIES MUST HAVE SAME COLUMNS!
 })
 
