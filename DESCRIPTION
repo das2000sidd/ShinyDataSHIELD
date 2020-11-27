@@ -1,6 +1,6 @@
 Package: ShinyDataSHIELD
 Title: Shiny app for DataSHIELD
-Version: 0.1
+Version: 1.1
 Author: Xavier Escribà Montagut <xavier.escriba@isglobal.org>
 Maintainer: Xavier Escribà Montagut <xavier.escriba@isglobal.org>
 Description: Implementation of main methodologies of DataSHIELD with a Shiny app for easy access to federated data analysis.
