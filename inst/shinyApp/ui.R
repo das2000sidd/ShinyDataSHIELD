@@ -187,6 +187,20 @@ body <- dashboardBody(
                               uiOutput("d_statistics_variable_selector_heatmap2"),
                               withSpinner(plotOutput("d_statistics_heatmap_plot")),
                               downloadButton("d_statistics_heatmap_plot_download", "Download plot")
+                     ),
+                     tabPanel("Box Plot", value = "box_plot",
+                              fluidRow(
+                                column(6,
+                                       uiOutput("d_statistics_variable_selector_boxplot_approach"),
+                                       uiOutput("d_statistics_variable_selector_boxplot")
+                                       ),
+                                column(6,
+                                       uiOutput("d_statistics_variable_selector_boxplot2"),
+                                       uiOutput("d_statistics_variable_selector_boxplot3")
+                                       )
+                              ),
+                              withSpinner(plotOutput("d_statistics_boxplot_plot")),
+                              # downloadButton("d_statistics_boxplot_plot_download", "Download plot")
                      )
               )
             )

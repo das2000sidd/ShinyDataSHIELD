@@ -71,6 +71,7 @@ observeEvent(input$server_resources_table_cell_edit, {
   j = info$col
   v = info$value
   # browser()
+  connection$server_resources$study_server <- as.character(connection$server_resources$study_server)
   if(substr(v, 1, 5) == "Study"){
     aux <- connection$server_resources[i, j]
     connection$server_resources[i, j] <<- DT::coerceValue(v, connection$server_resources[i, j])

@@ -121,23 +121,5 @@ observe({
     output$available_tables_lim <- renderUI({
       dataTableOutput("available_tables_lim_render")
     })
-    
-    # if (!connection$active) {shinyalert("Oops!", "Not connected", type = "error")}
-    # else if (!(any(c("ExpressionSet", "RangedSummarizedExperiment") %in% unlist(ds.class("resource1", connection$conns))))){
-    #   shinyalert("Oops!", "Selected resource(s) is not an Expression Set or Range Summarized Experiment. Can't perform LIMMA", type = "error")
-    # }
-    # else {
-    #   withProgress(message = "Loading Limma parameters", value = 0, {
-    #     incProgress(0.2)
-    #     # Take variables from the 1st selected dataset. They should be equal
-    #     # lists$resource_variables <- ds.varLabels("resource1", datasources = connection$conns)$server1
-    #     
-    #     ## ds.fvarLabels is crashing for RSE datasets ( ds.varLabels works for eSets tho )
-    #     
-    #     # lists$limma_labels <- ds.fvarLabels("resource1", datasources = connection$conns)$server1
-    #     incProgress(0.6)
-    #     
-    #   })
-    # }
   }
 })

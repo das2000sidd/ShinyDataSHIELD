@@ -25,6 +25,7 @@ server <- function(input, output, session) {
   js$disableTab("s_plot")
   js$disableTab("h_plot")
   js$disableTab("hm_plot")
+  js$disableTab("box_plot")
   js$disableTab("glm")
   js$disableTab("mixed_model")
   js$disableTab("plink")

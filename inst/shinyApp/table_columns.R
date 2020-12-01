@@ -66,10 +66,6 @@ observeEvent(input$jsValue, {
         } else if(new_class == "numeric"){
           ds.asNumeric(complete_name, variable, datasources = connection$conns[as.numeric(tables_available[index,2])])
         }
-        # browser()
-        # DSI::datashield.assign.expr(connection$conns[as.numeric(tables_available[index,2])], 
-        #                                                          "RSRC.CNSIM1.t[,3]", 
-        #                                                          as.symbol("NULL"))
         incProgress(0.2 / length(input$available_tables_cols_render_rows_selected))
         # Create auxiliary tables without the column 'variable', one table is the columns on the left, the other the
         # columns on the right
@@ -102,8 +98,6 @@ observeEvent(input$jsValue, {
           DSI::datashield.assign.expr(connection$conns[as.numeric(tables_available[index,2])],
                                       as.character(table_name[index]), 
                                       as.symbol(cally))
-          # ds.cbind(c(variable, "aux_col_no_variable_right"), newobj = as.character(table_name[index]), 
-          #          datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_right", datasources = connection$conns[as.numeric(tables_available[index,2])])
         } else if(extreme_right){
           cally <- paste0("cbind(aux_col_no_variable_left,", variable, ")")
@@ -111,8 +105,6 @@ observeEvent(input$jsValue, {
                                       as.character(table_name[index]), 
                                       as.symbol(cally))
           
-          # ds.cbind(c("aux_col_no_variable_left", variable), newobj = as.character(table_name[index]), 
-          #          datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_left", datasources = connection$conns[as.numeric(tables_available[index,2])])
         } else{
           cally <- paste0("cbind(aux_col_no_variable_left,", variable, ", aux_col_no_variable_right)")
@@ -120,8 +112,6 @@ observeEvent(input$jsValue, {
                                       as.character(table_name[index]), 
                                       as.symbol(cally))
           
-          # ds.cbind(c("aux_col_no_variable_left", variable, "aux_col_no_variable_right"), newobj = as.character(table_name[index]), 
-          #          datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_left", datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm("aux_col_no_variable_right", datasources = connection$conns[as.numeric(tables_available[index,2])])
           ds.rm(variable, datasources = connection$conns[as.numeric(tables_available[index,2])])

@@ -51,6 +51,23 @@ output$d_statistics_heatmap_plot <- renderPlot({
   }, error = function(w){})
 })
 
+output$d_statistics_boxplot_plot <- renderPlot({
+  tryCatch({
+    # browser()
+    if(is.null(input$d_statistics_variable_selector_boxplot_value_approach)){type <- "pooled"} else{
+      type <- input$d_statistics_variable_selector_boxplot_value_approach
+    }
+    ds.boxPlot(x = "tables_descriptive", 
+               variables  = input$d_statistics_variable_selector_boxplot_value,
+               group = input$d_statistics_variable_selector_boxplot_value2, 
+               group2 = input$d_statistics_variable_selector_boxplot_value3,
+               type = type,
+               datasources = connection$conns[
+                 as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected, 2]))
+               ])
+  }, error = function(w){})
+})
+
 output$manhattan <- renderCachedPlot({
   data <- do.call("rbind", vcf_results$result_table_gwas)
   featureCol <- 2

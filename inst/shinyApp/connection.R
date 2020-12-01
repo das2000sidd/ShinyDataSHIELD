@@ -106,12 +106,12 @@ lapply(1:max_servers, function(x){
       
       tab_key <- paste0("tab", x)
       res_key <- paste0("res", x)
-      
+
       tables_resources[[tab_key]] <- tryCatch(data.table(str_split(dsListTables(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "table"),
                                               error = function(w) { data.table() })
       tables_resources[[res_key]] <- tryCatch(data.table(str_split(dsListResources(conns[[paste0("server", x)]]), "[.]", simplify = TRUE, 2), "resource"),
                                               error = function(w) { data.table() })
-      # lists$tab_res <- rbind(tables, resources)
+
       if (nrow(tables_resources[[tab_key]])) {
         colnames(tables_resources[[tab_key]]) <- c("project", "res", "type")
         projects_tab <- unique(tables_resources[[tab_key]]$project)
@@ -136,7 +136,7 @@ lapply(1:max_servers, function(x){
         }
       })
       toggleElement(paste0("add_server", x))
-      toggleElement(paste0("remove_server", x))
+      # toggleElement(paste0("remove_server", x))
       toggleElement(paste0("connect_server", x))
       showElement("connect_selected")
       showElement("remove_item")
@@ -263,7 +263,7 @@ observeEvent(input$connect_selected, {
       connection$logindata <- connection$builder$build()
       connection$conns <- datashield.login(logins = connection$logindata)
       
-    }, error = function(w){shinyalert("Oops!", "Could not connect to the servers", type = "error")})
+    }, error = function(w){shinyalert("Oops!", as.character(datashield.errors()), type = "error")})
     
     tryCatch({
       # Load resources and tables
@@ -297,7 +297,6 @@ observeEvent(input$connect_selected, {
           }
           # "SshResourceClient" correspond to ssh resources, don't need to coerce them
           else if ("SshResourceClient" %in% resource_type){
-            # break
             lists$available_tables <- rbind(lists$available_tables, c(name = name, server_index = server_index,
                                                                       server = resources$study_server[i], type_resource = "ssh"))
           }
@@ -326,7 +325,6 @@ observeEvent(input$connect_selected, {
           }
         }
       }
-      
       lists$available_tables <- data.table(lists$available_tables)
       
       ## table_columns_a. Accepts "table"

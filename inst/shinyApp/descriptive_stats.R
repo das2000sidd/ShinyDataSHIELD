@@ -23,6 +23,7 @@ observeEvent(input$select_tables_descr_stats, {
       js$disableTab("s_plot")
       js$disableTab("h_plot")
       js$disableTab("hm_plot")
+      js$disableTab("box_plot")
       updateTabsetPanel(session, "d_statistics_t",
                         selected = "a_tables")
     }
@@ -52,6 +53,7 @@ observeEvent(input$select_tables_descr_stats, {
       js$enableTab("s_plot")
       js$enableTab("h_plot")
       js$enableTab("hm_plot")
+      js$enableTab("box_plot")
       updateTabsetPanel(session, "d_statistics_t",
                         selected = "summary")
     }
@@ -129,6 +131,33 @@ output$d_statistics_variable_selector_heatmap <- renderUI({
 output$d_statistics_variable_selector_heatmap2 <- renderUI({
   selectInput("d_statistics_variable_selector_heatmap_value2", "Select variable", 
               lists$table_columns_types[type %in% c("numeric")]$variable
+  )
+})
+
+output$d_statistics_variable_selector_boxplot <- renderUI({
+  if(length(input$available_tables_render_rows_selected) > 1){
+    output$d_statistics_variable_selector_boxplot_approach <- renderUI({
+      selectInput("d_statistics_variable_selector_boxplot_value_approach", "Select approach", c("pooled", "split"))
+    })
+    selectInput("d_statistics_variable_selector_boxplot_value", "Select variable(s)", 
+                lists$table_columns_types[type %in% c("numeric")]$variable
+    )
+  }
+  else{
+    selectInput("d_statistics_variable_selector_boxplot_value", "Select variable(s)", 
+                lists$table_columns_types[type %in% c("numeric")]$variable,
+                multiple = TRUE
+    )
+  }
+})
+output$d_statistics_variable_selector_boxplot2 <- renderUI({
+  selectInput("d_statistics_variable_selector_boxplot_value2", "Select grouping variable", 
+              lists$table_columns_types[type %in% c("factor")]$variable
+  )
+})
+output$d_statistics_variable_selector_boxplot3 <- renderUI({
+  selectInput("d_statistics_variable_selector_boxplot_value3", "Select second grouping variable", 
+              lists$table_columns_types[type %in% c("factor")]$variable
   )
 })
 
