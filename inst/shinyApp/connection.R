@@ -14,7 +14,7 @@ observeEvent(input$add, {
                                          ),
                                          conditionalPanel(
                                            condition = paste0("input.pat_switch" , tabIndex(), "== false"),
-                                           textInput(paste0("user",tabIndex()), "User", value = "administrator"),
+                                           textInput(paste0("user",tabIndex()), "User", value = "dsuser"),
                                            tags$head(tags$script(HTML(paste0(
                                              '$(document).keyup(function(event) {
                                               if ($("#password', tabIndex(), '").is(":focus") && (event.keyCode == 13)) {

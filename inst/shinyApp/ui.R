@@ -99,7 +99,7 @@ body <- dashboardBody(
                                          ),
                                          conditionalPanel(
                                            condition = "input.pat_switch1 == false",
-                                           textInput("user1", "User", value = "administrator"),
+                                           textInput("user1", "User", value = "dsuser"),
                                            tags$head(tags$script(HTML(jscode))),
                                            passwordInput("password1", "Password", value = "password")
                                          ),
