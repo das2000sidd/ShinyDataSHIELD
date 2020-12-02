@@ -29,6 +29,10 @@ COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
  
 COPY /inst/shinyApp/ /srv/shiny-server/R/
 
+# copy the contents of www folder to image
+ 
+COPY /www/ /srv/www/
+
 # install R packages
 
 RUN R -e "install.packages('devtools')"
@@ -47,6 +51,7 @@ RUN R -e "install.packages('dsBaseClient', repos = c(getOption('repos'), 'http:/
 RUN R -e "devtools::install_version('ggrepel', version = '0.8.2', repos = 'http://cran.us.r-project.org')"
 RUN R -e "devtools::install_github('isglobal-brge/dsOmicsClient')"
 RUN R -e "devtools::install_version('shinyWidgets', version = '0.5.4', repos = 'http://cran.us.r-project.org')"
+RUN R -e "devtools::install_version('stringr', version = '1.4.0', repos = 'http://cran.us.r-project.org')"
 
 # select port
  
