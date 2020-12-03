@@ -34,21 +34,21 @@ output$descriptive_summary <- renderDT(
     if(is.null(input$d_statistics_variable_selector_value_approach)){type <- "combine"} else{
       type <- input$d_statistics_variable_selector_value_approach
     }
-    
     if(ds.class(paste0("tables_descriptive$", input$d_statistics_variable_selector_value), datasources = connection$conns[
       as.numeric(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected[1], 2])
     ]) == "factor") {
-      taula <- ds.table1D(paste0("tables_descriptive$", input$d_statistics_variable_selector_value), datasources = connection$conns[
+      taula <- ds.table(rvar = paste0("tables_descriptive$", input$d_statistics_variable_selector_value), datasources = connection$conns[
         as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected, 2]))
-      ], type = type)$counts
+        ])
       if(type == "combine"){
-        table <- taula
+        table <- data.frame(taula$output.list$TABLES.COMBINED_all.sources_counts)
         colnames(table) <- "Counts"
       }
       else{
-        table <- data.frame(matrix(unlist(taula), nrow=length(taula), byrow=T))
-        rownames(table) <- names(taula)
-        colnames(table) <- rownames(taula[[1]])
+        table <- data.frame(taula$output.list$TABLE_rvar.by.study_counts)
+        colnames(table) <- paste0(names(connection$conns[
+          as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_render_rows_selected, 2]))
+        ]))
       }
       table
     }
@@ -59,7 +59,6 @@ output$descriptive_summary <- renderDT(
       table <- data.frame(matrix(unlist(Quantiles), nrow=length(Quantiles), byrow=T))
       rownames(table) <- names(Quantiles)
       colnames(table) <- names(Quantiles[[1]])
-      # as.data.table(lapply(as.data.table(table), format_num))
       round(table, digits = 4)
     }
   }, error = function(w){}), options=list(columnDefs = list(list(visible=FALSE, targets=c())))
@@ -70,7 +69,7 @@ observeEvent(input$server_resources_table_cell_edit, {
   i = info$row
   j = info$col
   v = info$value
-  # browser()
+
   connection$server_resources$study_server <- as.character(connection$server_resources$study_server)
   if(substr(v, 1, 5) == "Study"){
     aux <- connection$server_resources[i, j]
