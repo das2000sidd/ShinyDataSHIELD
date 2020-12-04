@@ -109,10 +109,9 @@ body <- dashboardBody(
                                   hr(),
                                   fluidRow(
                                     column(12,
-                                           hidden(switchInput(
-                                             inputId = "tbl_res1", value = TRUE, #label = "Tables or resources?",
-                                             onLabel = "Tables", offLabel = "Resources",
-                                             onStatus = "primary", offStatus = "primary"
+                                           hidden(tags$div(id = "tb_1",
+                                             materialSwitch(inputId = "tbl_res1", label = "Resources", inline = TRUE, value = T),
+                                             tags$span("Tables")
                                            ))
                                     )
                                   ),

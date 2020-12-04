@@ -140,7 +140,8 @@ output$d_statistics_variable_selector_boxplot <- renderUI({
       selectInput("d_statistics_variable_selector_boxplot_value_approach", "Select approach", c("pooled", "split"))
     })
     selectInput("d_statistics_variable_selector_boxplot_value", "Select variable(s)", 
-                lists$table_columns_types[type %in% c("numeric")]$variable
+                lists$table_columns_types[type %in% c("numeric")]$variable,
+                multiple = TRUE
     )
   }
   else{
@@ -152,12 +153,12 @@ output$d_statistics_variable_selector_boxplot <- renderUI({
 })
 output$d_statistics_variable_selector_boxplot2 <- renderUI({
   selectInput("d_statistics_variable_selector_boxplot_value2", "Select grouping variable", 
-              lists$table_columns_types[type %in% c("factor")]$variable
+              c("", lists$table_columns_types[type %in% c("factor")]$variable)
   )
 })
 output$d_statistics_variable_selector_boxplot3 <- renderUI({
   selectInput("d_statistics_variable_selector_boxplot_value3", "Select second grouping variable", 
-              lists$table_columns_types[type %in% c("factor")]$variable
+              c("", lists$table_columns_types[type %in% c("factor")]$variable)
   )
 })
 
