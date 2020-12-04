@@ -67,7 +67,7 @@ observeEvent(input$perform_glm, {
     })
     showElement("glm_results_table_download")
   }, error = function(w){
-    shinyalert("Oops!", "Can't perform GLM", type = "error")
+    shinyalert("Oops!", "Check whether the variables are properly written and/or your dependent variable fits the output family", type = "error")
     hideElement("glm_results_table_download")
   })
   
