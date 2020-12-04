@@ -86,6 +86,8 @@ server <- function(input, output, session) {
     ) 
   })
   
+  onStop(function() isolate(datashield.logout(connection$conns)))
+  
   observeEvent(input$stop, {
     browser()
   })
