@@ -33,10 +33,10 @@ observeEvent(input$add, {
                                 hr(),
                                 fluidRow(
                                   column(12,
-                                         hidden(switchInput(
-                                           inputId = paste0("tbl_res", tabIndex()), value = TRUE, #label = "Tables or resources?",
-                                           onLabel = "Tables", offLabel = "Resources",
-                                           onStatus = "primary", offStatus = "primary"
+                                         hidden(tags$div(id = paste0("tb_", tabIndex()),
+                                                         materialSwitch(inputId = paste0("tbl_res", tabIndex()), 
+                                                                        label = "Resources", inline = TRUE, value = T),
+                                                         tags$span("Tables")
                                          ))
                                   )
                                 ),
@@ -140,7 +140,7 @@ lapply(1:max_servers, function(x){
       toggleElement(paste0("connect_server", x))
       showElement("connect_selected")
       showElement("remove_item")
-      toggleElement(paste0("tbl_res", x))
+      toggleElement(paste0("tb_", x))
       toggleElement(paste0("info_opal_", x))
     },
     error = function(w){
