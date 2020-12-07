@@ -71,7 +71,8 @@ observeEvent(input$server_resources_table_cell_edit, {
   v = info$value
 
   connection$server_resources$study_server <- as.character(connection$server_resources$study_server)
-  if(substr(v, 1, 5) == "Study"){
+
+  if(substr(v, 1, 5) == "Study" & !is.na(as.integer(substr(v, 6, nchar(v))))){
     aux <- connection$server_resources[i, j]
     connection$server_resources[i, j] <<- DT::coerceValue(v, connection$server_resources[i, j])
     connection$server_resources[i, j] <<- DT::coerceValue(aux, connection$server_resources[i, j])
