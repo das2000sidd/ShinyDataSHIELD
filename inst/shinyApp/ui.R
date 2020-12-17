@@ -9,10 +9,12 @@ library(DT)
 library(data.table)
 library(shinyjs)
 library(shinyBS)
-# library(ggplot2)
+library(ggplot2)
 library(shinycssloaders)
 library(shinyWidgets)
 library(stringr)
+
+source("ggeditLiteModule.R", local = TRUE)
 
 jscode <- '
 $(document).keyup(function(event) {
@@ -199,6 +201,7 @@ body <- dashboardBody(
                                        )
                               ),
                               withSpinner(plotOutput("d_statistics_boxplot_plot")),
+                              ggeditLiteUI("d_statistics_boxplot_plot_edit"),
                               # downloadButton("d_statistics_boxplot_plot_download", "Download plot")
                      )
               )
@@ -215,6 +218,8 @@ body <- dashboardBody(
                                         fluidRow(
                                           column(6,
                                                  textInput("glm_formula", "Input GLM formula:"),
+                                                 hidden(selectInput("glm_approach", "Select the approach:",
+                                                             c("Pooled", "Study Level Meta Analysis"))),
                                                  actionButton("trigger_formula_help_glm", "Formula input help"),
                                                  actionButton("perform_glm", "Perform GLM")
                                           ),
@@ -295,7 +300,8 @@ body <- dashboardBody(
                 ),
                 tabPanel("Manhattan Plot", value = "gwas_plot",
                   withSpinner(plotOutput("manhattan")),
-                  downloadButton("genomics_manhattan_vcf_plot_download", "Download plot")
+                  ggeditLiteUI("manhattan_edit"),
+                  downloadButton("genomics_manhattan_vcf_plot_download", "Download plot", "genomics_manhattan_vcf_plot")
                 )
               )
             )

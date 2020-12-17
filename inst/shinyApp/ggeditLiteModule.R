@@ -123,7 +123,6 @@ ggeditLiteServer <- function(id, plot_name) {
       else{
         plot_modified(plot_modified() + theme(panel.grid.major = element_line()))
       }
-      browser()
       plot_modified(plot_modified() + 
                       ggplot2::theme(text = ggplot2::element_text(size=if(is.null(input$text_size) | is.na(input$text_size)){NULL}
                                                                        else{input$text_size}),

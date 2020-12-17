@@ -20,6 +20,10 @@ server <- function(input, output, session) {
   source("download_handlers.R", local = TRUE)
   source("table_columns.R", local = TRUE)
   
+  source("ggeditLiteModule.R", local = TRUE)
+  ggeditLiteServer("manhattan_edit", "genomics_manhattan_vcf_plot")
+  ggeditLiteServer("d_statistics_boxplot_plot_edit", "ds_boxplot_plot")
+  
   js$disableTab("summary")
   js$disableTab("col_tables")
   js$disableTab("s_plot")
