@@ -47,6 +47,12 @@ observeEvent(input$select_tables_sm, {
       colnames(lists$table_columns_types) <- c("variable", "type")
       js$enableTab("glm")
       js$enableTab("mixed_model")
+      if(length(input$available_tables_sm_render_rows_selected)>1){
+        showElement("glm_approach")
+      }
+      else{
+        hideElement("glm_approach")
+      }
       updateTabsetPanel(session, "statistic_models_t",
                         selected = "glm")
     }
@@ -58,19 +64,36 @@ observeEvent(input$gml_toggle_variables_table, {
 })
 
 observeEvent(input$perform_glm, {
-  tryCatch({
-    withProgress(message = "Performing GLM", value = 0.5, {
-      glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "tables_sm", family = input$gml_output_family,
-                                             datasources = connection$conns[
-                                               as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected, 2]))
-                                             ])
+  approach <- input$glm_approach
+  if(is.null(approach)){approach <- "Pooled"}
+  if(approach == "Pooled"){
+    tryCatch({
+      withProgress(message = "Performing GLM", value = 0.5, {
+        glm_results$glm_result_table <- ds.glm(formula = as.formula(input$glm_formula), data = "tables_sm", family = input$gml_output_family,
+                                               datasources = connection$conns[
+                                                 as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected, 2]))
+                                               ])
+      })
+      showElement("glm_results_table_download")
+    }, error = function(w){
+      shinyalert("Oops!", "Check whether the variables are properly written and/or your dependent variable fits the output family", type = "error")
+      hideElement("glm_results_table_download")
     })
-    showElement("glm_results_table_download")
-  }, error = function(w){
-    shinyalert("Oops!", "Check whether the variables are properly written and/or your dependent variable fits the output family", type = "error")
-    hideElement("glm_results_table_download")
-  })
-  
+  }
+  else{
+    tryCatch({
+      withProgress(message = "Performing GLM", value = 0.5, {
+        glm_results$glm_result_table <- ds.glmSLMA(formula = as.formula(input$glm_formula), data = "tables_sm", family = input$gml_output_family,
+                                               datasources = connection$conns[
+                                                 as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected, 2]))
+                                               ])
+      })
+      showElement("glm_results_table_download")
+    }, error = function(w){
+      shinyalert("Oops!", "Check whether the variables are properly written and/or your dependent variable fits the output family", type = "error")
+      hideElement("glm_results_table_download")
+    })
+  }
 })
 
 observeEvent(input$trigger_formula_help_glm, {
@@ -88,6 +111,7 @@ observeEvent(input$gmler_toggle_variables_table, {
 observeEvent(input$perform_glmer, {
   tryCatch({
     withProgress(message = "Performing GLMer", value = 0.5, {
+      browser()
       glm_results$glmer_result_table <- ds.glmerSLMA(formula = as.formula(input$glmer_formula), data = "tables_sm", family = input$gmler_output_family,
                                                      datasources = connection$conns[
                                                        as.numeric(unlist(lists$available_tables[type_resource == "table"][input$available_tables_sm_render_rows_selected, 2]))
